@@ -61,6 +61,9 @@ export interface FrameSettings {
   iphoneZoomBadge: string;
   iphoneShowFocus: boolean;
   iphoneFrameScale: number; // 0.5 to 1.6 (default 1.0)
+  iphoneShowDynamicIsland?: boolean; // Tampilan Dynamic Island & Status Bar iOS
+  iphoneBarStyle?: 'solid' | 'translucent'; // Bar Hitam Pekat Asli iPhone vs Transparan
+  iphoneShowLevel?: boolean; // Indikator Level Horizon iOS 17
 
   // Reels
   reelsUsername: string;

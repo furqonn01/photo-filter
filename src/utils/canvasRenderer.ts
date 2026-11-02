@@ -162,6 +162,30 @@ export function renderCanvas({
       h: height - pad * 2,
       radius: 8,
     };
+  } else if (frame === 'iphone') {
+    const frameScale = frameSettings.iphoneFrameScale ?? 1.0;
+    const baseScale = (highRes ? 2 : 1) * frameScale;
+    const topBarH = 88 * baseScale;
+    const bottomBarH = 184 * baseScale;
+    const barStyle = frameSettings.iphoneBarStyle || 'solid';
+
+    if (barStyle === 'solid') {
+      photoBounds = {
+        x: 0,
+        y: topBarH,
+        w: width,
+        h: Math.max(100, height - topBarH - bottomBarH),
+        radius: 16 * baseScale,
+      };
+    } else {
+      photoBounds = {
+        x: 0,
+        y: 0,
+        w: width,
+        h: height,
+        radius: 0,
+      };
+    }
   }
 
   // Draw background frame base (e.g. for polaroid / photobooth / macbook)
@@ -245,7 +269,7 @@ export function renderCanvas({
   }
 
   // Draw Frame UI & Overlays (MacBook bar, iPhone viewfinder, Reels icons, Digicam OSD)
-  drawFrameForeground(ctx, width, height, frame, photoBounds, frameSettings, highRes);
+  drawFrameForeground(ctx, width, height, frame, photoBounds, frameSettings, highRes, image);
 
   // Draw Stickers & Custom Texts
   drawStickers(ctx, photoBounds, stickers, highRes);
@@ -333,6 +357,9 @@ function drawFrameBackground(
   } else if (frame === 'macbook') {
     ctx.fillStyle = settings.macbookDark ? '#1e1e1e' : '#e2e8f0';
     ctx.fillRect(0, 0, width, height);
+  } else if (frame === 'iphone') {
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, width, height);
   }
 }
 
@@ -344,7 +371,8 @@ function drawFrameForeground(
   frame: FrameType,
   photoBounds: { x: number; y: number; w: number; h: number },
   settings: FrameSettings,
-  highRes: boolean
+  highRes: boolean,
+  image?: HTMLImageElement | null
 ) {
   const scale = highRes ? 2 : 1;
 
@@ -562,137 +590,342 @@ function drawFrameForeground(
     }
 
     case 'iphone': {
-      // iPhone Camera Interface (Ultra-realistic iOS Camera Viewfinder)
+      // iPhone Camera Interface (Ultra-realistic iOS 17/18 Camera Viewfinder)
       ctx.save();
       const frameScale = settings.iphoneFrameScale ?? 1.0;
       const baseScale = scale * frameScale;
-      const topBarH = 68 * baseScale;
-      const bottomBarH = 115 * baseScale;
+      const topBarH = 88 * baseScale;
+      const bottomBarH = 184 * baseScale;
+      const barStyle = settings.iphoneBarStyle || 'solid';
 
-      // Dark translucent bars
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-      ctx.fillRect(0, 0, width, topBarH);
-      ctx.fillRect(0, height - bottomBarH, width, bottomBarH);
+      // 1. TOP & BOTTOM CAMERA BARS (Solid Jet Black #000000 vs Translucent Full Screen)
+      if (barStyle === 'solid') {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, width, topBarH);
+        ctx.fillRect(0, height - bottomBarH, width, bottomBarH);
 
-      // 1. TOP BAR ICONS:
+        // Apple signature inner rounded border outlining the 4:3 camera sensor preview
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.lineWidth = 1 * baseScale;
+        roundRect(
+          ctx,
+          0.5 * baseScale,
+          topBarH + 0.5 * baseScale,
+          width - 1 * baseScale,
+          height - topBarH - bottomBarH - 1 * baseScale,
+          16 * baseScale
+        );
+        ctx.stroke();
+      } else {
+        // Translucent gradient scrims for full preview
+        const topGrad = ctx.createLinearGradient(0, 0, 0, topBarH);
+        topGrad.addColorStop(0, 'rgba(0, 0, 0, 0.88)');
+        topGrad.addColorStop(0.7, 'rgba(0, 0, 0, 0.55)');
+        topGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = topGrad;
+        ctx.fillRect(0, 0, width, topBarH);
+
+        const botGrad = ctx.createLinearGradient(0, height - bottomBarH, 0, height);
+        botGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        botGrad.addColorStop(0.3, 'rgba(0, 0, 0, 0.65)');
+        botGrad.addColorStop(1, 'rgba(0, 0, 0, 0.96)');
+        ctx.fillStyle = botGrad;
+        ctx.fillRect(0, height - bottomBarH, width, bottomBarH);
+      }
+
+      // 2. AUTHENTIC iOS STATUS BAR & DYNAMIC ISLAND
+      if (settings.iphoneShowDynamicIsland !== false) {
+        const statusY = 22 * baseScale;
+
+        // A. Iconic Apple Marketing Clock: "9:41"
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `600 ${14 * baseScale}px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('9:41', 32 * baseScale, statusY);
+
+        // B. Dynamic Island (iPhone 14 Pro / 15 / 16 Signature Black Pill)
+        const islandW = 114 * baseScale;
+        const islandH = 30 * baseScale;
+        const islandX = width / 2 - islandW / 2;
+        const islandY = 7 * baseScale;
+
+        // Dynamic Island Capsule Body
+        roundRect(ctx, islandX, islandY, islandW, islandH, islandH / 2);
+        ctx.fillStyle = '#000000';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.lineWidth = 0.8 * baseScale;
+        roundRect(ctx, islandX, islandY, islandW, islandH, islandH / 2);
+        ctx.stroke();
+
+        // Right inside Island: TrueDepth Camera Lens
+        const lensX = width / 2 + 32 * baseScale;
+        const lensY = islandY + islandH / 2;
+        ctx.beginPath();
+        ctx.arc(lensX, lensY, 5 * baseScale, 0, Math.PI * 2);
+        ctx.fillStyle = '#0a101d';
+        ctx.fill();
+
+        // Lens specular ring
+        ctx.strokeStyle = 'rgba(70, 110, 180, 0.55)';
+        ctx.lineWidth = 1 * baseScale;
+        ctx.beginPath();
+        ctx.arc(lensX - 0.8 * baseScale, lensY - 0.8 * baseScale, 2.8 * baseScale, 0.8 * Math.PI, 1.8 * Math.PI);
+        ctx.stroke();
+
+        // Lens dark pupil
+        ctx.beginPath();
+        ctx.arc(lensX, lensY, 2 * baseScale, 0, Math.PI * 2);
+        ctx.fillStyle = '#020408';
+        ctx.fill();
+
+        // Camera Active Privacy Indicator (iOS Emerald Green Dot)
+        const greenX = width / 2 + 17 * baseScale;
+        ctx.beginPath();
+        ctx.arc(greenX, lensY, 2.3 * baseScale, 0, Math.PI * 2);
+        ctx.fillStyle = '#30d158';
+        ctx.fill();
+        // Subtle green glow
+        ctx.beginPath();
+        ctx.arc(greenX, lensY, 4.2 * baseScale, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(48, 209, 88, 0.35)';
+        ctx.fill();
+
+        // Left inside Island: FaceID sensor window
+        const faceX = width / 2 - 28 * baseScale;
+        ctx.beginPath();
+        ctx.arc(faceX, lensY, 3.8 * baseScale, 0, Math.PI * 2);
+        ctx.fillStyle = '#070b13';
+        ctx.fill();
+
+        // C. Status Bar Right: Cellular (4 bars), 5G, Battery
+        // 4 Signal Bars
+        const sigStartX = width - 94 * baseScale;
+        const barHeights = [3.5, 5.5, 7.8, 10.2].map((h) => h * baseScale);
+        ctx.fillStyle = '#ffffff';
+        barHeights.forEach((bH, bIdx) => {
+          const bx = sigStartX + bIdx * 3.8 * baseScale;
+          const by = statusY + 5 * baseScale - bH;
+          roundRect(ctx, bx, by, 2.2 * baseScale, bH, 0.8 * baseScale);
+          ctx.fill();
+        });
+
+        // "5G" badge
+        ctx.font = `700 ${10 * baseScale}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('5G', width - 74 * baseScale, statusY);
+
+        // Battery Icon
+        const bW = 23 * baseScale;
+        const bH = 11.5 * baseScale;
+        const bX = width - 42 * baseScale;
+        const bY = statusY - bH / 2;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.2 * baseScale;
+        roundRect(ctx, bX, bY, bW, bH, 3.5 * baseScale);
+        ctx.stroke();
+
+        // Terminal knob
+        roundRect(ctx, bX + bW + 1 * baseScale, bY + 3.25 * baseScale, 1.6 * baseScale, 5 * baseScale, 0.8 * baseScale);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+
+        // Charge level fill
+        roundRect(ctx, bX + 2.2 * baseScale, bY + 2.2 * baseScale, 15 * baseScale, bH - 4.4 * baseScale, 2 * baseScale);
+        ctx.fill();
+      }
+
+      // 3. TOP CAMERA CONTROLS BAR (Directly below status bar)
+      const ctrlY = 60 * baseScale;
+
       // A. Authentic iOS Flash Icon with AUTO badge
-      const flashX = 28 * baseScale;
-      const flashY = topBarH * 0.52;
-
-      // Circle badge
+      const flashX = 32 * baseScale;
+      // Glass button circle
       ctx.beginPath();
-      ctx.arc(flashX, flashY, 13 * baseScale, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      ctx.arc(flashX, ctrlY, 15 * baseScale, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-      ctx.lineWidth = 1 * baseScale;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 0.8 * baseScale;
       ctx.stroke();
 
-      // iOS Lightning Bolt Vector
-      ctx.fillStyle = '#facc15';
+      // iOS Lightning Bolt Vector (crisp SF Symbol)
+      ctx.fillStyle = '#ffd60a';
       ctx.beginPath();
-      ctx.moveTo(flashX + 1 * baseScale, flashY - 7 * baseScale);
-      ctx.lineTo(flashX - 5 * baseScale, flashY + 0.5 * baseScale);
-      ctx.lineTo(flashX - 0.5 * baseScale, flashY + 0.5 * baseScale);
-      ctx.lineTo(flashX - 2.5 * baseScale, flashY + 7 * baseScale);
-      ctx.lineTo(flashX + 5 * baseScale, flashY - 1 * baseScale);
-      ctx.lineTo(flashX + 0.5 * baseScale, flashY - 1 * baseScale);
+      ctx.moveTo(flashX + 1.2 * baseScale, ctrlY - 7 * baseScale);
+      ctx.lineTo(flashX - 5.5 * baseScale, ctrlY + 0.8 * baseScale);
+      ctx.lineTo(flashX - 0.8 * baseScale, ctrlY + 0.8 * baseScale);
+      ctx.lineTo(flashX - 2.8 * baseScale, ctrlY + 7 * baseScale);
+      ctx.lineTo(flashX + 5.5 * baseScale, ctrlY - 1 * baseScale);
+      ctx.lineTo(flashX + 0.8 * baseScale, ctrlY - 1 * baseScale);
       ctx.closePath();
       ctx.fill();
 
-      // "AUTO" label
+      // "AUTO" label next to flash
       ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
       ctx.font = `700 ${9 * baseScale}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
       ctx.textAlign = 'left';
-      ctx.fillText('AUTO', flashX + 16 * baseScale, flashY + 3 * baseScale);
+      ctx.textBaseline = 'middle';
+      ctx.fillText('AUTO', flashX + 18 * baseScale, ctrlY);
 
       // B. Authentic iOS Night Mode Pill (Crescent moon + 1s)
-      const nightX = width / 2 - 32 * baseScale;
-      const nightY = flashY;
-      ctx.beginPath();
-      roundRect(ctx, nightX - 22 * baseScale, nightY - 11 * baseScale, 44 * baseScale, 22 * baseScale, 11 * baseScale);
-      ctx.fillStyle = 'rgba(250, 204, 21, 0.22)';
+      const nightX = 98 * baseScale;
+      const nightW = 46 * baseScale;
+      const nightH = 24 * baseScale;
+      roundRect(ctx, nightX - nightW / 2, ctrlY - nightH / 2, nightW, nightH, nightH / 2);
+      ctx.fillStyle = 'rgba(255, 214, 10, 0.18)';
       ctx.fill();
-      ctx.strokeStyle = '#facc15';
+      ctx.strokeStyle = '#ffd60a';
       ctx.lineWidth = 1.2 * baseScale;
-      roundRect(ctx, nightX - 22 * baseScale, nightY - 11 * baseScale, 44 * baseScale, 22 * baseScale, 11 * baseScale);
+      roundRect(ctx, nightX - nightW / 2, ctrlY - nightH / 2, nightW, nightH, nightH / 2);
       ctx.stroke();
 
       // Crescent Moon Vector
-      ctx.fillStyle = '#facc15';
+      ctx.fillStyle = '#ffd60a';
       ctx.beginPath();
-      ctx.arc(nightX - 8 * baseScale, nightY, 5 * baseScale, 0.6 * Math.PI, 1.8 * Math.PI, false);
-      ctx.arc(nightX - 6 * baseScale, nightY, 4.2 * baseScale, 1.7 * Math.PI, 0.7 * Math.PI, true);
+      ctx.arc(nightX - 9 * baseScale, ctrlY, 5 * baseScale, 0.6 * Math.PI, 1.8 * Math.PI, false);
+      ctx.arc(nightX - 7 * baseScale, ctrlY, 4.2 * baseScale, 1.7 * Math.PI, 0.7 * Math.PI, true);
       ctx.closePath();
       ctx.fill();
 
-      ctx.font = `700 ${10 * baseScale}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx.font = `700 ${10.5 * baseScale}px -apple-system, BlinkMacSystemFont, sans-serif`;
       ctx.textAlign = 'left';
-      ctx.fillText('1s', nightX + 1 * baseScale, nightY + 3.5 * baseScale);
+      ctx.textBaseline = 'middle';
+      ctx.fillText('1s', nightX + 1 * baseScale, ctrlY + 0.5 * baseScale);
 
-      // C. Authentic iOS Live Photo Icon (3 Concentric Rings, Outer Segmented)
-      const liveX = width / 2 + 32 * baseScale;
-      const liveY = flashY;
+      // C. Exposure Drawer Chevron (Center Top)
+      const chevX = width / 2;
+      ctx.beginPath();
+      ctx.arc(chevX, ctrlY, 13 * baseScale, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 0.8 * baseScale;
+      ctx.stroke();
+
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.8 * baseScale;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(chevX - 4.5 * baseScale, ctrlY + 2 * baseScale);
+      ctx.lineTo(chevX, ctrlY - 2.5 * baseScale);
+      ctx.lineTo(chevX + 4.5 * baseScale, ctrlY + 2 * baseScale);
+      ctx.stroke();
+
+      // D. RAW MAX / 48MP Pill Badge
+      const rawX = width - 84 * baseScale;
+      const rawW = 38 * baseScale;
+      const rawH = 22 * baseScale;
+      roundRect(ctx, rawX - rawW / 2, ctrlY - rawH / 2, rawW, rawH, 5 * baseScale);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.32)';
+      ctx.lineWidth = 0.9 * baseScale;
+      roundRect(ctx, rawX - rawW / 2, ctrlY - rawH / 2, rawW, rawH, 5 * baseScale);
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `700 ${9 * baseScale}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('RAW', rawX, ctrlY);
+
+      // E. Authentic iOS Live Photo Icon (3 Concentric Rings)
+      const liveX = width - 32 * baseScale;
+      // Glass button circle
+      ctx.beginPath();
+      ctx.arc(liveX, ctrlY, 15 * baseScale, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 0.8 * baseScale;
+      ctx.stroke();
 
       // Outer 8 dashed arcs
-      ctx.strokeStyle = '#facc15';
-      ctx.lineWidth = 1.4 * baseScale;
+      ctx.strokeStyle = '#ffd60a';
+      ctx.lineWidth = 1.3 * baseScale;
       ctx.save();
-      ctx.setLineDash([3 * baseScale, 3 * baseScale]);
+      ctx.setLineDash([2.5 * baseScale, 2.5 * baseScale]);
       ctx.beginPath();
-      ctx.arc(liveX, liveY, 10 * baseScale, 0, Math.PI * 2);
+      ctx.arc(liveX, ctrlY, 9.5 * baseScale, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
 
       // Middle continuous ring
       ctx.beginPath();
-      ctx.arc(liveX, liveY, 6 * baseScale, 0, Math.PI * 2);
+      ctx.arc(liveX, ctrlY, 5.8 * baseScale, 0, Math.PI * 2);
+      ctx.strokeStyle = '#ffd60a';
+      ctx.lineWidth = 1.3 * baseScale;
       ctx.stroke();
 
       // Center solid dot
       ctx.beginPath();
-      ctx.arc(liveX, liveY, 2 * baseScale, 0, Math.PI * 2);
-      ctx.fillStyle = '#facc15';
+      ctx.arc(liveX, ctrlY, 2.2 * baseScale, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffd60a';
       ctx.fill();
 
-      // D. Exposure Drawer Chevron (Center Top)
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2 * baseScale;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.beginPath();
-      ctx.moveTo(width / 2 - 5 * baseScale, 16 * baseScale);
-      ctx.lineTo(width / 2, 12 * baseScale);
-      ctx.lineTo(width / 2 + 5 * baseScale, 16 * baseScale);
-      ctx.stroke();
+      // 4. VIEWPORT ELEMENTS (Inside Camera Preview Window)
+      const vpTop = topBarH;
+      const vpBottom = height - bottomBarH;
+      const vpH = vpBottom - vpTop;
+      const vpCenterY = vpTop + vpH / 2;
 
-      // 2. RULE OF THIRDS GRID (if enabled)
+      // A. RULE OF THIRDS GRID (if enabled)
       if (settings.iphoneGrid) {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.26)';
         ctx.lineWidth = 0.8 * baseScale;
         // Verticals
         ctx.beginPath();
-        ctx.moveTo(width / 3, topBarH);
-        ctx.lineTo(width / 3, height - bottomBarH);
-        ctx.moveTo((width * 2) / 3, topBarH);
-        ctx.lineTo((width * 2) / 3, height - bottomBarH);
+        ctx.moveTo(width / 3, vpTop);
+        ctx.lineTo(width / 3, vpBottom);
+        ctx.moveTo((width * 2) / 3, vpTop);
+        ctx.lineTo((width * 2) / 3, vpBottom);
         // Horizontals
-        const viewH = height - topBarH - bottomBarH;
-        ctx.moveTo(0, topBarH + viewH / 3);
-        ctx.lineTo(width, topBarH + viewH / 3);
-        ctx.moveTo(0, topBarH + (viewH * 2) / 3);
-        ctx.lineTo(width, topBarH + (viewH * 2) / 3);
+        ctx.moveTo(0, vpTop + vpH / 3);
+        ctx.lineTo(width, vpTop + vpH / 3);
+        ctx.moveTo(0, vpTop + (vpH * 2) / 3);
+        ctx.lineTo(width, vpTop + (vpH * 2) / 3);
         ctx.stroke();
       }
 
-      // 3. AUTHENTIC iOS YELLOW FOCUS BOX & SUN SLIDER
+      // B. iOS 17/18 HORIZON LEVEL INDICATOR (if enabled)
+      if (settings.iphoneShowLevel !== false) {
+        const levY = vpCenterY;
+        const levColor = '#ffd60a';
+        ctx.strokeStyle = levColor;
+        ctx.lineWidth = 1.4 * baseScale;
+        ctx.lineCap = 'round';
+
+        // Left tick
+        ctx.beginPath();
+        ctx.moveTo(width / 2 - 40 * baseScale, levY);
+        ctx.lineTo(width / 2 - 12 * baseScale, levY);
+        ctx.stroke();
+
+        // Right tick
+        ctx.beginPath();
+        ctx.moveTo(width / 2 + 12 * baseScale, levY);
+        ctx.lineTo(width / 2 + 40 * baseScale, levY);
+        ctx.stroke();
+
+        // Center level dot
+        ctx.beginPath();
+        ctx.arc(width / 2, levY, 1.6 * baseScale, 0, Math.PI * 2);
+        ctx.fillStyle = levColor;
+        ctx.fill();
+      }
+
+      // C. AUTHENTIC iOS YELLOW FOCUS BOX & SUN SLIDER
       if (settings.iphoneShowFocus) {
         const cx = width * 0.5;
-        const cy = topBarH + (height - topBarH - bottomBarH) * 0.44;
+        const cy = vpTop + vpH * 0.42;
         const boxSize = 64 * baseScale;
         const cornerLen = 10 * baseScale;
 
-        ctx.strokeStyle = '#facc15';
+        ctx.strokeStyle = '#ffd60a';
         ctx.lineWidth = 1.2 * baseScale;
 
         // 4 Corner Brackets
@@ -717,7 +950,7 @@ function drawFrameForeground(
 
         // Right side vertical exposure bar & Sun Slider
         const sunX = cx + boxSize / 2 + 18 * baseScale;
-        ctx.strokeStyle = 'rgba(250, 204, 21, 0.7)';
+        ctx.strokeStyle = 'rgba(255, 214, 10, 0.7)';
         ctx.lineWidth = 1 * baseScale;
         ctx.beginPath();
         ctx.moveTo(sunX, cy - boxSize / 2);
@@ -728,11 +961,11 @@ function drawFrameForeground(
         const sunR = 4 * baseScale;
         ctx.beginPath();
         ctx.arc(sunX, cy, sunR, 0, Math.PI * 2);
-        ctx.fillStyle = '#facc15';
+        ctx.fillStyle = '#ffd60a';
         ctx.fill();
 
         // 8 Radiating Sun Rays
-        ctx.strokeStyle = '#facc15';
+        ctx.strokeStyle = '#ffd60a';
         ctx.lineWidth = 1.2 * baseScale;
         for (let a = 0; a < 8; a++) {
           const rad = (a * Math.PI) / 4;
@@ -745,43 +978,50 @@ function drawFrameForeground(
         }
       }
 
-      // 4. AUTHENTIC iOS ZOOM DIAL BADGES (.5, 1x, 2, 3)
+      // 5. AUTHENTIC iOS ZOOM DIAL CAPSULE (.5, 1x, 2, 3)
       const zoomBadges = ['0.5', '1x', '2', '3'];
       const activeZoom = settings.iphoneZoomBadge || '1x';
-      const badgeY = height - bottomBarH - 26 * baseScale;
+      const badgeY = height - bottomBarH - 24 * baseScale;
 
       // Dark translucent pill capsule
-      const pillW = 160 * baseScale;
-      const pillH = 30 * baseScale;
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+      const pillW = 172 * baseScale;
+      const pillH = 32 * baseScale;
       roundRect(ctx, width / 2 - pillW / 2, badgeY - pillH / 2, pillW, pillH, pillH / 2);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.62)';
       ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 0.8 * baseScale;
+      roundRect(ctx, width / 2 - pillW / 2, badgeY - pillH / 2, pillW, pillH, pillH / 2);
+      ctx.stroke();
 
       zoomBadges.forEach((z, idx) => {
-        const bX = width / 2 + (idx - 1.5) * 38 * baseScale;
+        const bX = width / 2 + (idx - 1.5) * 40 * baseScale;
         const isActive = z === activeZoom;
 
         if (isActive) {
           ctx.beginPath();
-          ctx.arc(bX, badgeY, 12 * baseScale, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(250, 204, 21, 0.25)';
+          ctx.arc(bX, badgeY, 13 * baseScale, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
           ctx.fill();
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+          ctx.lineWidth = 0.8 * baseScale;
+          ctx.stroke();
         }
 
-        ctx.fillStyle = isActive ? '#facc15' : '#ffffff';
-        ctx.font = `700 ${11 * baseScale}px -apple-system, BlinkMacSystemFont, sans-serif`;
+        ctx.fillStyle = isActive ? '#ffd60a' : '#ffffff';
+        ctx.font = `700 ${11 * baseScale}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(z === '0.5' ? '.5' : z, bX, badgeY);
       });
 
-      // 5. iOS CAMERA MODES SELECTOR (Centered on Active Mode + Sliding Carousel + Edge Fade)
+      // 6. iOS CAMERA MODES SELECTOR (Centered on Active Mode + Sliding Carousel + Edge Fade)
       const modes = ['TIME-LAPSE', 'SLO-MO', 'CINEMATIC', 'VIDEO', 'PHOTO', 'PORTRAIT', 'PANO'];
       const activeMode = settings.iphoneCameraMode || 'PHOTO';
       const activeIdx = modes.indexOf(activeMode);
       const safeActiveIdx = activeIdx !== -1 ? activeIdx : modes.indexOf('PHOTO');
-      const modeY = height - bottomBarH + 24 * baseScale;
-      const modeSpacing = 72 * baseScale;
+      const modeY = height - bottomBarH + 28 * baseScale;
+      const modeSpacing = 74 * baseScale;
       const maxVisibleDist = width * 0.44;
 
       modes.forEach((m, idx) => {
@@ -797,9 +1037,9 @@ function drawFrameForeground(
         const fadeAlpha = Math.cos(normDist * (Math.PI / 2));
 
         if (isCurrent) {
-          ctx.fillStyle = '#facc15'; // iOS signature yellow
+          ctx.fillStyle = '#ffd60a'; // Apple Camera Signature Yellow
         } else {
-          ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, 0.7 * fadeAlpha)})`;
+          ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, 0.65 * fadeAlpha)})`;
         }
 
         ctx.font = `700 ${11.5 * baseScale}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
@@ -809,13 +1049,13 @@ function drawFrameForeground(
       });
 
       // Smooth Edge Fade Scrims (Left & Right)
-      const fadeW = width * 0.24;
-      const fadeH = 26 * baseScale;
+      const fadeW = width * 0.26;
+      const fadeH = 28 * baseScale;
       const fadeY = modeY - fadeH / 2;
 
       // Left edge fade out
       const leftFade = ctx.createLinearGradient(0, 0, fadeW, 0);
-      leftFade.addColorStop(0, 'rgba(0, 0, 0, 0.75)');
+      leftFade.addColorStop(0, '#000000');
       leftFade.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = leftFade;
       ctx.fillRect(0, fadeY, fadeW, fadeH);
@@ -823,78 +1063,128 @@ function drawFrameForeground(
       // Right edge fade out
       const rightFade = ctx.createLinearGradient(width - fadeW, 0, width, 0);
       rightFade.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      rightFade.addColorStop(1, 'rgba(0, 0, 0, 0.75)');
+      rightFade.addColorStop(1, '#000000');
       ctx.fillStyle = rightFade;
       ctx.fillRect(width - fadeW, fadeY, fadeW, fadeH);
 
-      // 6. BOTTOM SHUTTER BUTTON (Apple iOS Signature Shutter)
-      const shutterY = height - 52 * baseScale;
+      // 7. BOTTOM ACTION BAR (Shutter Button, Gallery Preview, Flip Camera)
+      const shutterY = height - 76 * baseScale;
       const sX = width / 2;
 
+      // A. GALLERY PREVIEW THUMBNAIL (Bottom Left)
+      const gallSize = 48 * baseScale;
+      const gallX = 32 * baseScale;
+      const gallY = shutterY - gallSize / 2;
+      const gallR = 10 * baseScale;
+
+      ctx.save();
+      roundRect(ctx, gallX, gallY, gallSize, gallSize, gallR);
+      ctx.clip();
+
+      // If main image is available, draw its miniature thumbnail!
+      if (image && image.complete && image.naturalWidth > 0) {
+        ctx.drawImage(image, gallX, gallY, gallSize, gallSize);
+      } else {
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(gallX, gallY, gallSize, gallSize);
+        // Photo icon placeholder
+        ctx.fillStyle = '#64748b';
+        ctx.beginPath();
+        ctx.arc(gallX + 16 * baseScale, gallY + 16 * baseScale, 5 * baseScale, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(gallX + 8 * baseScale, gallY + 38 * baseScale);
+        ctx.lineTo(gallX + 22 * baseScale, gallY + 24 * baseScale);
+        ctx.lineTo(gallX + 32 * baseScale, gallY + 34 * baseScale);
+        ctx.lineTo(gallX + 40 * baseScale, gallY + 26 * baseScale);
+        ctx.lineTo(gallX + 44 * baseScale, gallY + 38 * baseScale);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // Gallery border
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.lineWidth = 1.8 * baseScale;
+      roundRect(ctx, gallX, gallY, gallSize, gallSize, gallR);
+      ctx.stroke();
+
+      // B. APPLE SHUTTER BUTTON (Center)
       // Outer White Ring
       ctx.beginPath();
-      ctx.arc(sX, shutterY, 32 * baseScale, 0, Math.PI * 2);
+      ctx.arc(sX, shutterY, 36 * baseScale, 0, Math.PI * 2);
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 3.5 * baseScale;
       ctx.stroke();
 
-      // Inner Solid White Disc
+      // Inner Solid Disc (Adapts to Mode: White for Photo/Portrait/Pano, Red for Video/Cinematic/Slo-Mo)
+      const isVideoMode = activeMode === 'VIDEO' || activeMode === 'CINEMATIC' || activeMode === 'SLO-MO' || activeMode === 'TIME-LAPSE';
       ctx.beginPath();
-      ctx.arc(sX, shutterY, 26 * baseScale, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
+      ctx.arc(sX, shutterY, 28 * baseScale, 0, Math.PI * 2);
+      ctx.fillStyle = isVideoMode ? '#ff3b30' : '#ffffff';
       ctx.fill();
 
-      // 7. FLIP CAMERA ICON (Apple SF Symbols style)
-      const flipX = width - 48 * baseScale;
+      if (activeMode === 'TIME-LAPSE') {
+        // Red inner rounded square inside white disc for Time-Lapse
+        roundRect(ctx, sX - 10 * baseScale, shutterY - 10 * baseScale, 20 * baseScale, 20 * baseScale, 4 * baseScale);
+        ctx.fillStyle = '#ff3b30';
+        ctx.fill();
+      }
+
+      // C. FLIP CAMERA BUTTON (Bottom Right - Apple SF Symbols style)
+      const flipRadius = 24 * baseScale;
+      const flipX = width - 32 * baseScale - flipRadius;
       const flipY = shutterY;
 
-      // Circle badge
+      // Circle glass button
       ctx.beginPath();
-      ctx.arc(flipX, flipY, 20 * baseScale, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+      ctx.arc(flipX, flipY, flipRadius, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
       ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.lineWidth = 0.8 * baseScale;
+      ctx.stroke();
 
       // Circular arrows
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.8 * baseScale;
+      ctx.lineWidth = 2 * baseScale;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.arc(flipX, flipY, 11 * baseScale, -0.2 * Math.PI, 0.8 * Math.PI);
+      ctx.arc(flipX, flipY, 12 * baseScale, -0.15 * Math.PI, 0.85 * Math.PI);
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(flipX, flipY, 11 * baseScale, 0.8 * Math.PI + 0.3, -0.2 * Math.PI - 0.3);
+      ctx.arc(flipX, flipY, 12 * baseScale, 0.85 * Math.PI + 0.3, -0.15 * Math.PI - 0.3);
       ctx.stroke();
 
       // Arrowheads
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.moveTo(flipX + 8 * baseScale, flipY - 11 * baseScale);
-      ctx.lineTo(flipX + 13 * baseScale, flipY - 6 * baseScale);
-      ctx.lineTo(flipX + 6 * baseScale, flipY - 5 * baseScale);
+      ctx.moveTo(flipX + 9 * baseScale, flipY - 12 * baseScale);
+      ctx.lineTo(flipX + 14 * baseScale, flipY - 7 * baseScale);
+      ctx.lineTo(flipX + 7 * baseScale, flipY - 6 * baseScale);
       ctx.closePath();
       ctx.fill();
 
       ctx.beginPath();
-      ctx.moveTo(flipX - 8 * baseScale, flipY + 11 * baseScale);
-      ctx.lineTo(flipX - 13 * baseScale, flipY + 6 * baseScale);
-      ctx.lineTo(flipX - 6 * baseScale, flipY + 5 * baseScale);
+      ctx.moveTo(flipX - 9 * baseScale, flipY + 12 * baseScale);
+      ctx.lineTo(flipX - 14 * baseScale, flipY + 7 * baseScale);
+      ctx.lineTo(flipX - 7 * baseScale, flipY + 6 * baseScale);
       ctx.closePath();
       ctx.fill();
 
       // Camera body silhouette inside flip circle
-      roundRect(ctx, flipX - 4 * baseScale, flipY - 3 * baseScale, 8 * baseScale, 6 * baseScale, 1.5 * baseScale);
+      roundRect(ctx, flipX - 4.5 * baseScale, flipY - 3.2 * baseScale, 9 * baseScale, 6.4 * baseScale, 1.5 * baseScale);
+      ctx.fill();
+      // Tiny top bump
+      roundRect(ctx, flipX - 2 * baseScale, flipY - 4.6 * baseScale, 4 * baseScale, 1.6 * baseScale, 0.6 * baseScale);
       ctx.fill();
 
-      // 8. GALLERY PREVIEW SQUARE (Bottom Left)
-      const gallX = 28 * baseScale;
-      const gallY = shutterY - 19 * baseScale;
-      const gallSize = 38 * baseScale;
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2 * baseScale;
-      roundRect(ctx, gallX, gallY, gallSize, gallSize, 7 * baseScale);
-      ctx.stroke();
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-      roundRect(ctx, gallX, gallY, gallSize, gallSize, 7 * baseScale);
+      // 8. iOS HOME INDICATOR BAR (Very Bottom Center)
+      const homeW = 136 * baseScale;
+      const homeH = 4.5 * baseScale;
+      const homeR = 2.25 * baseScale;
+      roundRect(ctx, width / 2 - homeW / 2, height - 12 * baseScale, homeW, homeH, homeR);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
       ctx.fill();
 
       ctx.restore();

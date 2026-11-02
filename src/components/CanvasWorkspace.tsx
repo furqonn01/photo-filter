@@ -106,12 +106,12 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const canvasX = mouseX * scaleX;
       const canvasY = mouseY * scaleY;
 
-      // If iPhone frame: Check tap on camera modes carousel to switch mode directly!
+      // If iPhone frame: Check tap on interactive UI elements (Camera Mode carousel, Zoom dial, Shutter, Flip Camera)
       if (frame === 'iphone' && onUpdateFrameSettings) {
         const frameScale = frameSettings.iphoneFrameScale ?? 1.0;
         const baseScale = frameScale;
-        const bottomBarH = 125 * baseScale;
-        const modeY = height - bottomBarH + 24 * baseScale;
+        const bottomBarH = 184 * baseScale;
+        const modeY = height - bottomBarH + 28 * baseScale;
 
         // Check if tap was within mode row height bounds (+/- 18px)
         if (Math.abs(canvasY - modeY) <= 18 * baseScale) {
@@ -121,7 +121,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           const activeMode = frameSettings.iphoneCameraMode || 'PHOTO';
           const activeIdx = modes.indexOf(activeMode);
           const safeActiveIdx = activeIdx !== -1 ? activeIdx : modes.indexOf('PHOTO');
-          const modeSpacing = 72 * baseScale;
+          const modeSpacing = 74 * baseScale;
 
           for (let idx = 0; idx < modes.length; idx++) {
             const deltaIdx = idx - safeActiveIdx;
@@ -132,6 +132,36 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
               return;
             }
           }
+        }
+
+        // Check tap on Zoom badges (.5, 1x, 2, 3)
+        const badgeY = height - bottomBarH - 24 * baseScale;
+        if (Math.abs(canvasY - badgeY) <= 18 * baseScale) {
+          const zoomBadges = ['0.5', '1x', '2', '3'];
+          for (let idx = 0; idx < zoomBadges.length; idx++) {
+            const bX = width / 2 + (idx - 1.5) * 40 * baseScale;
+            if (Math.abs(canvasX - bX) <= 18 * baseScale) {
+              sounds.playPop();
+              onUpdateFrameSettings((prev) => ({ ...prev, iphoneZoomBadge: zoomBadges[idx] }));
+              return;
+            }
+          }
+        }
+
+        // Check tap on Shutter button
+        const shutterY = height - 76 * baseScale;
+        if (Math.hypot(canvasX - width / 2, canvasY - shutterY) <= 38 * baseScale) {
+          sounds.playShutter();
+          return;
+        }
+
+        // Check tap on Flip Camera button
+        const flipRadius = 24 * baseScale;
+        const flipX = width - 32 * baseScale - flipRadius;
+        if (Math.hypot(canvasX - flipX, canvasY - shutterY) <= 28 * baseScale) {
+          sounds.playPop();
+          onUpdateAdjustments((prev) => ({ ...prev, flipH: !prev.flipH }));
+          return;
         }
       }
 

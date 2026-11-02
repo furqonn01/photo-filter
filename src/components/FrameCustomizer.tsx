@@ -160,51 +160,97 @@ export const FrameCustomizer: React.FC<FrameCustomizerProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-slate-400 mb-1 font-medium">Pilihan Mode</label>
-              <select
-                value={settings.iphoneCameraMode}
-                onChange={(e) =>
-                  onUpdateSettings((prev) => ({
-                    ...prev,
-                    iphoneCameraMode: e.target.value as FrameSettings['iphoneCameraMode'],
-                  }))
-                }
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-white focus:outline-none focus:border-pink-500"
-              >
-                <option value="TIME-LAPSE">TIME-LAPSE</option>
-                <option value="SLO-MO">SLO-MO</option>
-                <option value="CINEMATIC">CINEMATIC</option>
-                <option value="VIDEO">VIDEO</option>
-                <option value="PHOTO">PHOTO</option>
-                <option value="PORTRAIT">PORTRAIT</option>
-                <option value="PANO">PANO</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-slate-400 mb-1 font-medium">Lensa Aktif</label>
-              <select
-                value={settings.iphoneZoomBadge}
-                onChange={(e) =>
-                  onUpdateSettings((prev) => ({
-                    ...prev,
-                    iphoneZoomBadge: e.target.value,
-                  }))
-                }
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-white focus:outline-none focus:border-pink-500"
-              >
-                <option value="0.5">0.5x Ultra Wide</option>
-                <option value="1x">1x Main</option>
-                <option value="2">2x Telephoto</option>
-                <option value="3">3x Optical</option>
-              </select>
+          {/* Lensa Zoom Pills */}
+          <div>
+            <label className="block text-slate-400 mb-1 font-medium">Lensa Kamera iPhone</label>
+            <div className="grid grid-cols-4 gap-1.5">
+              {[
+                { id: '0.5', label: '.5x Ultra' },
+                { id: '1x', label: '1x Main' },
+                { id: '2', label: '2x Tele' },
+                { id: '3', label: '3x Optik' },
+              ].map((z) => (
+                <button
+                  key={z.id}
+                  type="button"
+                  onClick={() => {
+                    sounds.playPop();
+                    onUpdateSettings((prev) => ({ ...prev, iphoneZoomBadge: z.id }));
+                  }}
+                  className={`py-1.5 rounded-lg text-[10px] font-bold border transition cursor-pointer text-center ${
+                    (settings.iphoneZoomBadge || '1x') === z.id
+                      ? 'bg-amber-400 text-slate-950 border-amber-300 font-extrabold shadow-sm shadow-amber-400/20'
+                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                  }`}
+                >
+                  {z.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <label className="flex items-center gap-2 cursor-pointer bg-slate-900 border border-slate-700 px-3 py-2 rounded-xl hover:bg-slate-800">
+          {/* Gaya Viewport Bar: Solid Black (Asli iPhone) vs Transparan */}
+          <div>
+            <label className="block text-slate-400 mb-1 font-medium">Gaya Tampilan Bar Viewfinder</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playPop();
+                  onUpdateSettings((prev) => ({ ...prev, iphoneBarStyle: 'solid' }));
+                }}
+                className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition cursor-pointer text-center ${
+                  (settings.iphoneBarStyle || 'solid') === 'solid'
+                    ? 'bg-pink-500 text-white border-pink-400 shadow-md shadow-pink-500/20'
+                    : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                }`}
+              >
+                ⬛ Solid Black (Asli iOS)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playPop();
+                  onUpdateSettings((prev) => ({ ...prev, iphoneBarStyle: 'translucent' }));
+                }}
+                className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition cursor-pointer text-center ${
+                  settings.iphoneBarStyle === 'translucent'
+                    ? 'bg-pink-500 text-white border-pink-400 shadow-md shadow-pink-500/20'
+                    : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                }`}
+              >
+                🪟 Transparan (Full Preview)
+              </button>
+            </div>
+          </div>
+
+          {/* Fitur Realistis iOS Kamera Toggles */}
+          <div className="grid grid-cols-2 gap-2 pt-0.5">
+            <label className="flex items-center gap-2 cursor-pointer bg-slate-900 border border-slate-700 px-2.5 py-2 rounded-xl hover:bg-slate-800 transition">
+              <input
+                type="checkbox"
+                checked={settings.iphoneShowDynamicIsland !== false}
+                onChange={(e) =>
+                  onUpdateSettings((prev) => ({ ...prev, iphoneShowDynamicIsland: e.target.checked }))
+                }
+                className="rounded text-pink-500 focus:ring-0"
+              />
+              <span className="text-slate-300 font-medium text-[11px]">Dynamic Island</span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer bg-slate-900 border border-slate-700 px-2.5 py-2 rounded-xl hover:bg-slate-800 transition">
+              <input
+                type="checkbox"
+                checked={settings.iphoneShowLevel !== false}
+                onChange={(e) =>
+                  onUpdateSettings((prev) => ({ ...prev, iphoneShowLevel: e.target.checked }))
+                }
+                className="rounded text-pink-500 focus:ring-0"
+              />
+              <span className="text-slate-300 font-medium text-[11px]">Waterpass 17 ⚖️</span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer bg-slate-900 border border-slate-700 px-2.5 py-2 rounded-xl hover:bg-slate-800 transition">
               <input
                 type="checkbox"
                 checked={settings.iphoneGrid}
@@ -213,10 +259,10 @@ export const FrameCustomizer: React.FC<FrameCustomizerProps> = ({
                 }
                 className="rounded text-pink-500 focus:ring-0"
               />
-              <span className="text-slate-300 font-medium">Grid 3x3</span>
+              <span className="text-slate-300 font-medium text-[11px]">Grid 3x3 📐</span>
             </label>
 
-            <label className="flex items-center gap-2 cursor-pointer bg-slate-900 border border-slate-700 px-3 py-2 rounded-xl hover:bg-slate-800">
+            <label className="flex items-center gap-2 cursor-pointer bg-slate-900 border border-slate-700 px-2.5 py-2 rounded-xl hover:bg-slate-800 transition">
               <input
                 type="checkbox"
                 checked={settings.iphoneShowFocus}
@@ -225,7 +271,7 @@ export const FrameCustomizer: React.FC<FrameCustomizerProps> = ({
                 }
                 className="rounded text-pink-500 focus:ring-0"
               />
-              <span className="text-slate-300 font-medium">Fokus ☀️</span>
+              <span className="text-slate-300 font-medium text-[11px]">Fokus ☀️</span>
             </label>
           </div>
         </div>
