@@ -1400,36 +1400,61 @@ function drawFrameForeground(
       }
 
       const lineCount = Math.max(1, captionLines.length);
-      const infoY = height - (52 + lineCount * 18 + 24) * scale;
+      const audioY = height - 42 * scale;
+      const audioGap = 16 * scale;
+      const captionLineH = 20 * scale;
+      const captionTopY = audioY - audioGap - (lineCount - 1) * captionLineH - 12 * scale;
+      const profileToCaptionGap = 18 * scale;
+      const avatarR = 17 * scale;
+      const profileY = captionTopY - profileToCaptionGap - avatarR;
 
-      // Profile avatar ring with gradient
-      const avatarGrad = ctx.createLinearGradient(userX, infoY - 16 * scale, userX + 32 * scale, infoY + 16 * scale);
-      avatarGrad.addColorStop(0, '#f43f5e');
-      avatarGrad.addColorStop(1, '#a855f7');
+      // Profile avatar ring with Instagram Story gradient
+      const avatarGrad = ctx.createLinearGradient(userX, profileY - avatarR, userX + avatarR * 2, profileY + avatarR);
+      avatarGrad.addColorStop(0, '#f58529');
+      avatarGrad.addColorStop(0.5, '#dd2a7b');
+      avatarGrad.addColorStop(1, '#8134af');
       ctx.beginPath();
-      ctx.arc(userX + 16 * scale, infoY, 16 * scale, 0, Math.PI * 2);
+      ctx.arc(userX + avatarR, profileY, avatarR + 1.5 * scale, 0, Math.PI * 2);
       ctx.fillStyle = avatarGrad;
       ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.5 * scale;
-      ctx.stroke();
 
-      // Avatar inner icon
-      ctx.fillStyle = '#ffffff';
-      ctx.font = `${14 * scale}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.fillText('💖', userX + 16 * scale, infoY + 5 * scale);
+      // Avatar inner image or placeholder
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(userX + avatarR, profileY, avatarR - 0.5 * scale, 0, Math.PI * 2);
+      ctx.clip();
+      if (image && image.complete && image.naturalWidth > 0) {
+        ctx.drawImage(image, userX, profileY - avatarR, avatarR * 2, avatarR * 2);
+      } else {
+        ctx.fillStyle = '#f43f5e';
+        ctx.fillRect(userX, profileY - avatarR, avatarR * 2, avatarR * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `${14 * scale}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('💖', userX + avatarR, profileY);
+      }
+      ctx.restore();
+
+      // White ring stroke around avatar
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.2 * scale;
+      ctx.beginPath();
+      ctx.arc(userX + avatarR, profileY, avatarR, 0, Math.PI * 2);
+      ctx.stroke();
 
       // Username
       ctx.fillStyle = '#ffffff';
       ctx.font = `700 ${14 * scale}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
       ctx.textAlign = 'left';
-      ctx.fillText(settings.reelsUsername || '@cutie.vibes', userX + 40 * scale, infoY + 4 * scale);
+      ctx.textBaseline = 'middle';
+      const usernameText = settings.reelsUsername || '@cutie.vibes';
+      ctx.fillText(usernameText, userX + avatarR * 2 + 10 * scale, profileY);
 
       // Instagram Verified Blue Badge
-      const userWidth = ctx.measureText(settings.reelsUsername || '@cutie.vibes').width;
-      const badgeX = userX + 44 * scale + userWidth;
-      const badgeY = infoY;
+      const userWidth = ctx.measureText(usernameText).width;
+      const badgeX = userX + avatarR * 2 + 10 * scale + userWidth + 7 * scale;
+      const badgeY = profileY;
       ctx.beginPath();
       ctx.arc(badgeX, badgeY, 6 * scale, 0, Math.PI * 2);
       ctx.fillStyle = '#0ea5e9';
@@ -1444,26 +1469,29 @@ function drawFrameForeground(
 
       // Follow Button Pill
       const followX = badgeX + 14 * scale;
-      ctx.strokeStyle = '#ffffff';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
       ctx.lineWidth = 1 * scale;
-      roundRect(ctx, followX, infoY - 11 * scale, 56 * scale, 22 * scale, 7 * scale);
+      roundRect(ctx, followX, profileY - 10 * scale, 56 * scale, 21 * scale, 6 * scale);
       ctx.stroke();
       ctx.fillStyle = '#ffffff';
-      ctx.font = `700 ${10.5 * scale}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx.font = `700 ${10.5 * scale}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillText('Follow', followX + 28 * scale, infoY + 4 * scale);
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Follow', followX + 28 * scale, profileY);
 
-      // Render Multi-line Wrapped Caption
+      // Render Multi-line Wrapped Caption with generous line-height and breathing room
       ctx.fillStyle = '#ffffff';
-      ctx.font = `400 ${12.5 * scale}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx.font = `400 ${13 * scale}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
       ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
       captionLines.forEach((line, idx) => {
-        ctx.fillText(line, userX, infoY + (24 + idx * 18) * scale);
+        ctx.fillText(line, userX, captionTopY + idx * captionLineH);
       });
 
       // Audio Banner ticker with musical note
-      const audioY = infoY + (24 + lineCount * 18 + 6) * scale;
-      ctx.font = `600 ${11.5 * scale}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx.font = `600 ${11.5 * scale}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
       ctx.fillText(`♫ ${settings.reelsAudio || 'Original Sound - Cute Chill Lo-Fi'}`, userX, audioY);
 
       ctx.restore();
