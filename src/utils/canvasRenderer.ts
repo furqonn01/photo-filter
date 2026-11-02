@@ -600,7 +600,7 @@ function drawFrameForeground(
       const bottomBarH = 184 * baseScale;
       const barStyle = settings.iphoneBarStyle || 'solid';
 
-      // 1. TOP & BOTTOM CAMERA BARS (Solid Jet Black #000000 vs Pure Translucent without color gradient)
+      // 1. TOP & BOTTOM CAMERA BARS (Solid Jet Black #000000 vs Dark Translucent)
       if (barStyle === 'solid') {
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, width, topBarH);
@@ -619,10 +619,10 @@ function drawFrameForeground(
         );
         ctx.stroke();
       } else {
-        // Pure transparent mode: Zero color gradient or background tint on the photo!
-        // Subtle drop shadow ensures icons & text remain crisp over bright photos
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
-        ctx.shadowBlur = 3 * baseScale;
+        // Uniform dark translucent bars (no mismatched gradient stripes behind text)
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.fillRect(0, 0, width, topBarH);
+        ctx.fillRect(0, height - bottomBarH, width, bottomBarH);
       }
 
       // 2. AUTHENTIC iOS STATUS BAR & DYNAMIC ISLAND
@@ -1039,27 +1039,6 @@ function drawFrameForeground(
         ctx.textBaseline = 'middle';
         ctx.fillText(m, mX, modeY);
       });
-
-      // Smooth Edge Fade Scrims (Left & Right) - only in solid black bar mode
-      if (barStyle === 'solid') {
-        const fadeW = width * 0.26;
-        const fadeH = 28 * baseScale;
-        const fadeY = modeY - fadeH / 2;
-
-        // Left edge fade out
-        const leftFade = ctx.createLinearGradient(0, 0, fadeW, 0);
-        leftFade.addColorStop(0, '#000000');
-        leftFade.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        ctx.fillStyle = leftFade;
-        ctx.fillRect(0, fadeY, fadeW, fadeH);
-
-        // Right edge fade out
-        const rightFade = ctx.createLinearGradient(width - fadeW, 0, width, 0);
-        rightFade.addColorStop(0, 'rgba(0, 0, 0, 0)');
-        rightFade.addColorStop(1, '#000000');
-        ctx.fillStyle = rightFade;
-        ctx.fillRect(width - fadeW, fadeY, fadeW, fadeH);
-      }
 
       // 7. BOTTOM ACTION BAR (Shutter Button, Gallery Preview, Flip Camera)
       const shutterY = height - 76 * baseScale;

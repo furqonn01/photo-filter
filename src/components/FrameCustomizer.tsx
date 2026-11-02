@@ -219,7 +219,7 @@ export const FrameCustomizer: React.FC<FrameCustomizerProps> = ({
                     : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
                 }`}
               >
-                🪟 Transparan (Tanpa Gradasi)
+                🪟 Transparan Gelap
               </button>
             </div>
           </div>
