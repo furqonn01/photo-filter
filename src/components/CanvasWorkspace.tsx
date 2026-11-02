@@ -106,6 +106,35 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const canvasX = mouseX * scaleX;
       const canvasY = mouseY * scaleY;
 
+      // If iPhone frame: Check tap on camera modes carousel to switch mode directly!
+      if (frame === 'iphone' && onUpdateFrameSettings) {
+        const frameScale = frameSettings.iphoneFrameScale ?? 1.0;
+        const baseScale = frameScale;
+        const bottomBarH = 125 * baseScale;
+        const modeY = height - bottomBarH + 24 * baseScale;
+
+        // Check if tap was within mode row height bounds (+/- 18px)
+        if (Math.abs(canvasY - modeY) <= 18 * baseScale) {
+          const modes: Array<'TIME-LAPSE' | 'SLO-MO' | 'CINEMATIC' | 'VIDEO' | 'PHOTO' | 'PORTRAIT' | 'PANO'> = [
+            'TIME-LAPSE', 'SLO-MO', 'CINEMATIC', 'VIDEO', 'PHOTO', 'PORTRAIT', 'PANO'
+          ];
+          const activeMode = frameSettings.iphoneCameraMode || 'PHOTO';
+          const activeIdx = modes.indexOf(activeMode);
+          const safeActiveIdx = activeIdx !== -1 ? activeIdx : modes.indexOf('PHOTO');
+          const modeSpacing = 72 * baseScale;
+
+          for (let idx = 0; idx < modes.length; idx++) {
+            const deltaIdx = idx - safeActiveIdx;
+            const mX = width / 2 + deltaIdx * modeSpacing;
+            if (Math.abs(canvasX - mX) <= modeSpacing * 0.45) {
+              sounds.playPop();
+              onUpdateFrameSettings((prev) => ({ ...prev, iphoneCameraMode: modes[idx] }));
+              return;
+            }
+          }
+        }
+      }
+
       // Check hit on stickers (in reverse order so top-most is selected)
       let hitSticker: StickerItem | null = null;
       for (let i = stickers.length - 1; i >= 0; i--) {

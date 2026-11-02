@@ -746,20 +746,57 @@ function drawFrameForeground(
         ctx.fillText(z === '0.5' ? '.5' : z, bX, badgeY);
       });
 
-      // 5. iOS CAMERA MODES SELECTOR
-      const modes = ['CINEMATIC', 'VIDEO', 'PHOTO', 'PORTRAIT', 'PANO'];
+      // 5. iOS CAMERA MODES SELECTOR (Centered on Active Mode + Sliding Carousel + Edge Fade)
+      const modes = ['TIME-LAPSE', 'SLO-MO', 'CINEMATIC', 'VIDEO', 'PHOTO', 'PORTRAIT', 'PANO'];
       const activeMode = settings.iphoneCameraMode || 'PHOTO';
+      const activeIdx = modes.indexOf(activeMode);
+      const safeActiveIdx = activeIdx !== -1 ? activeIdx : modes.indexOf('PHOTO');
       const modeY = height - bottomBarH + 24 * baseScale;
+      const modeSpacing = 72 * baseScale;
+      const maxVisibleDist = width * 0.44;
 
       modes.forEach((m, idx) => {
-        const isCurrent = m === activeMode;
-        const mX = width / 2 + (idx - 2) * 66 * baseScale;
-        ctx.fillStyle = isCurrent ? '#facc15' : 'rgba(255, 255, 255, 0.65)';
+        const deltaIdx = idx - safeActiveIdx;
+        const mX = width / 2 + deltaIdx * modeSpacing;
+        const isCurrent = deltaIdx === 0;
+
+        const distFromCenter = Math.abs(mX - width / 2);
+        if (distFromCenter > maxVisibleDist + 24 * baseScale) return;
+
+        // Smooth cosine falloff for text opacity as it approaches edges
+        const normDist = Math.min(1, distFromCenter / maxVisibleDist);
+        const fadeAlpha = Math.cos(normDist * (Math.PI / 2));
+
+        if (isCurrent) {
+          ctx.fillStyle = '#facc15'; // iOS signature yellow
+        } else {
+          ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, 0.7 * fadeAlpha)})`;
+        }
+
         ctx.font = `700 ${11.5 * baseScale}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(m, mX, modeY);
       });
+
+      // Smooth Edge Fade Scrims (Left & Right)
+      const fadeW = width * 0.24;
+      const fadeH = 26 * baseScale;
+      const fadeY = modeY - fadeH / 2;
+
+      // Left edge fade out
+      const leftFade = ctx.createLinearGradient(0, 0, fadeW, 0);
+      leftFade.addColorStop(0, 'rgba(0, 0, 0, 0.75)');
+      leftFade.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = leftFade;
+      ctx.fillRect(0, fadeY, fadeW, fadeH);
+
+      // Right edge fade out
+      const rightFade = ctx.createLinearGradient(width - fadeW, 0, width, 0);
+      rightFade.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      rightFade.addColorStop(1, 'rgba(0, 0, 0, 0.75)');
+      ctx.fillStyle = rightFade;
+      ctx.fillRect(width - fadeW, fadeY, fadeW, fadeH);
 
       // 6. BOTTOM SHUTTER BUTTON (Apple iOS Signature Shutter)
       const shutterY = height - 52 * baseScale;

@@ -57,7 +57,7 @@ export interface FrameSettings {
 
   // iPhone
   iphoneGrid: boolean;
-  iphoneCameraMode: 'PHOTO' | 'PORTRAIT' | 'CINEMATIC' | 'PANO';
+  iphoneCameraMode: 'TIME-LAPSE' | 'SLO-MO' | 'CINEMATIC' | 'VIDEO' | 'PHOTO' | 'PORTRAIT' | 'PANO';
   iphoneZoomBadge: string;
   iphoneShowFocus: boolean;
   iphoneFrameScale: number; // 0.5 to 1.6 (default 1.0)

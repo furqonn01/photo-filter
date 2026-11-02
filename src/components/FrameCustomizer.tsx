@@ -136,9 +136,33 @@ export const FrameCustomizer: React.FC<FrameCustomizerProps> = ({
             </div>
           </div>
 
+          {/* Quick Mode Carousel Selector */}
+          <div>
+            <label className="block text-slate-400 mb-1 font-medium">Mode Kamera iPhone (Geser & Fade di Ujung)</label>
+            <div className="flex gap-1 overflow-x-auto no-scrollbar pb-1">
+              {(['TIME-LAPSE', 'SLO-MO', 'CINEMATIC', 'VIDEO', 'PHOTO', 'PORTRAIT', 'PANO'] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => {
+                    sounds.playPop();
+                    onUpdateSettings((prev) => ({ ...prev, iphoneCameraMode: m }));
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition cursor-pointer whitespace-nowrap ${
+                    settings.iphoneCameraMode === m
+                      ? 'bg-amber-400 text-slate-950 border-amber-300 font-extrabold shadow-sm shadow-amber-400/20'
+                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-slate-400 mb-1 font-medium">Mode Kamera</label>
+              <label className="block text-slate-400 mb-1 font-medium">Pilihan Mode</label>
               <select
                 value={settings.iphoneCameraMode}
                 onChange={(e) =>
@@ -149,9 +173,12 @@ export const FrameCustomizer: React.FC<FrameCustomizerProps> = ({
                 }
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-white focus:outline-none focus:border-pink-500"
               >
+                <option value="TIME-LAPSE">TIME-LAPSE</option>
+                <option value="SLO-MO">SLO-MO</option>
+                <option value="CINEMATIC">CINEMATIC</option>
+                <option value="VIDEO">VIDEO</option>
                 <option value="PHOTO">PHOTO</option>
                 <option value="PORTRAIT">PORTRAIT</option>
-                <option value="CINEMATIC">CINEMATIC</option>
                 <option value="PANO">PANO</option>
               </select>
             </div>
