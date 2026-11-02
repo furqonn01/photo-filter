@@ -345,17 +345,22 @@ export const FrameCustomizer: React.FC<FrameCustomizerProps> = ({
       {currentFrame === 'photobooth_4cut' && (
         <div className="space-y-3 text-xs">
           <div>
-            <label className="block text-slate-400 mb-1 font-medium flex items-center gap-1">
-              <Palette className="w-3 h-3 text-pink-400" /> Warna Latar Pastel Korea
+            <label className="block text-slate-400 mb-1.5 font-medium flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <Palette className="w-3 h-3 text-pink-400" /> Warna Latar Bingkai Korea
+              </span>
+              <span className="text-[10px] text-slate-500">Otomatis kontras teks</span>
             </label>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap items-center">
               {[
                 { name: 'Pink Pastel', hex: '#fbcfe8' },
                 { name: 'Lavender', hex: '#e9d5ff' },
                 { name: 'Soft Mint', hex: '#bbf7d0' },
                 { name: 'Butter Yellow', hex: '#fef08a' },
                 { name: 'Denim Blue', hex: '#bae6fd' },
-                { name: 'Chic Noir', hex: '#1e293b' },
+                { name: 'Chic Noir', hex: '#0f172a' },
+                { name: 'Espresso Brown', hex: '#3e2723' },
+                { name: 'Muted Peach', hex: '#fed7aa' },
                 { name: 'Pure White', hex: '#ffffff' },
               ].map((c) => (
                 <button
@@ -366,13 +371,57 @@ export const FrameCustomizer: React.FC<FrameCustomizerProps> = ({
                     onUpdateSettings((prev) => ({ ...prev, photoboothColor: c.hex }));
                   }}
                   title={c.name}
-                  className={`w-8 h-8 rounded-full border-2 transition-transform cursor-pointer ${
+                  className={`w-7 h-7 rounded-full border-2 transition-transform cursor-pointer ${
                     settings.photoboothColor === c.hex
                       ? 'scale-110 border-white ring-2 ring-pink-500'
                       : 'border-slate-600 hover:scale-105'
                   }`}
                   style={{ backgroundColor: c.hex }}
                 />
+              ))}
+
+              {/* Custom Color Input */}
+              <label
+                title="Pilih Warna Kustom"
+                className="w-7 h-7 rounded-full border-2 border-dashed border-slate-500 hover:border-pink-400 flex items-center justify-center cursor-pointer relative overflow-hidden"
+              >
+                <input
+                  type="color"
+                  value={settings.photoboothColor.startsWith('#') && settings.photoboothColor.length === 7 ? settings.photoboothColor : '#fbcfe8'}
+                  onChange={(e) => onUpdateSettings((prev) => ({ ...prev, photoboothColor: e.target.value }))}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                />
+                <span className="text-[11px] font-bold text-slate-400">+</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Text Color Option */}
+          <div>
+            <label className="block text-slate-400 mb-1 font-medium">Warna Teks & Tanggal</label>
+            <div className="flex gap-1.5 flex-wrap">
+              {[
+                { label: '✨ Auto Kontras', val: 'auto' },
+                { label: 'Hitam / Navy', val: '#1e1b4b' },
+                { label: 'Putih Bersih', val: '#ffffff' },
+                { label: 'Emas / Gold', val: '#facc15' },
+                { label: 'Soft Pink', val: '#f472b6' },
+              ].map((tc) => (
+                <button
+                  key={tc.val}
+                  type="button"
+                  onClick={() => {
+                    sounds.playPop();
+                    onUpdateSettings((prev) => ({ ...prev, photoboothTextColor: tc.val }));
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition cursor-pointer ${
+                    (settings.photoboothTextColor || 'auto') === tc.val
+                      ? 'bg-pink-500 text-white border-pink-400 shadow-sm shadow-pink-500/20'
+                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                  }`}
+                >
+                  {tc.label}
+                </button>
               ))}
             </div>
           </div>
@@ -409,7 +458,87 @@ export const FrameCustomizer: React.FC<FrameCustomizerProps> = ({
 
       {/* Polaroid Controls */}
       {currentFrame === 'polaroid' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+        <div className="space-y-3 text-xs">
+          <div>
+            <label className="block text-slate-400 mb-1.5 font-medium flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <Palette className="w-3 h-3 text-pink-400" /> Warna Kertas Instax / Polaroid
+              </span>
+              <span className="text-[10px] text-slate-500">Otomatis kontras tulisan</span>
+            </label>
+            <div className="flex gap-2 flex-wrap items-center">
+              {[
+                { name: 'Putih Klasik', hex: '#ffffff' },
+                { name: 'Instax Black', hex: '#18181b' },
+                { name: 'Vintage Cream', hex: '#fdfbf7' },
+                { name: 'Soft Peach', hex: '#ffe4e6' },
+                { name: 'Cool Lavender', hex: '#f3e8ff' },
+                { name: 'Midnight Navy', hex: '#0f172a' },
+                { name: 'Sage Green', hex: '#dcfce7' },
+              ].map((c) => (
+                <button
+                  key={c.hex}
+                  type="button"
+                  onClick={() => {
+                    sounds.playPop();
+                    onUpdateSettings((prev) => ({ ...prev, polaroidColor: c.hex }));
+                  }}
+                  title={c.name}
+                  className={`w-7 h-7 rounded-lg border-2 cursor-pointer transition-transform ${
+                    settings.polaroidColor === c.hex
+                      ? 'scale-110 border-pink-500 ring-2 ring-pink-500/50'
+                      : 'border-slate-600 hover:scale-105'
+                  }`}
+                  style={{ backgroundColor: c.hex }}
+                />
+              ))}
+
+              {/* Custom Color Input */}
+              <label
+                title="Pilih Warna Kertas Kustom"
+                className="w-7 h-7 rounded-lg border-2 border-dashed border-slate-500 hover:border-pink-400 flex items-center justify-center cursor-pointer relative overflow-hidden"
+              >
+                <input
+                  type="color"
+                  value={settings.polaroidColor.startsWith('#') && settings.polaroidColor.length === 7 ? settings.polaroidColor : '#ffffff'}
+                  onChange={(e) => onUpdateSettings((prev) => ({ ...prev, polaroidColor: e.target.value }))}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                />
+                <span className="text-[11px] font-bold text-slate-400">+</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Polaroid Text Color Option */}
+          <div>
+            <label className="block text-slate-400 mb-1 font-medium">Warna Tulisan Tangan</label>
+            <div className="flex gap-1.5 flex-wrap">
+              {[
+                { label: '✨ Auto Kontras', val: 'auto' },
+                { label: 'Spidol Hitam', val: '#1f2937' },
+                { label: 'Gel Pen Putih', val: '#f8fafc' },
+                { label: 'Gel Pen Gold', val: '#facc15' },
+                { label: 'Gel Pen Pink', val: '#fb7185' },
+              ].map((tc) => (
+                <button
+                  key={tc.val}
+                  type="button"
+                  onClick={() => {
+                    sounds.playPop();
+                    onUpdateSettings((prev) => ({ ...prev, polaroidTextColor: tc.val }));
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition cursor-pointer ${
+                    (settings.polaroidTextColor || 'auto') === tc.val
+                      ? 'bg-pink-500 text-white border-pink-400 shadow-sm shadow-pink-500/20'
+                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                  }`}
+                >
+                  {tc.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div>
             <label className="block text-slate-400 mb-1 font-medium flex items-center gap-1">
               <Type className="w-3 h-3 text-pink-400" /> Tulisan Tangan Polaroid
@@ -423,34 +552,6 @@ export const FrameCustomizer: React.FC<FrameCustomizerProps> = ({
               placeholder="Sweet Memories ♡"
               className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-white focus:outline-none focus:border-pink-500 font-serif"
             />
-          </div>
-
-          <div>
-            <label className="block text-slate-400 mb-1 font-medium">Warna Kertas Foto</label>
-            <div className="flex gap-2">
-              {[
-                { name: 'Putih Klasik', hex: '#ffffff' },
-                { name: 'Vintage Cream', hex: '#fdfbf7' },
-                { name: 'Soft Peach', hex: '#ffe4e6' },
-                { name: 'Cool Lavender', hex: '#f3e8ff' },
-              ].map((c) => (
-                <button
-                  key={c.hex}
-                  type="button"
-                  onClick={() => {
-                    sounds.playPop();
-                    onUpdateSettings((prev) => ({ ...prev, polaroidColor: c.hex }));
-                  }}
-                  title={c.name}
-                  className={`w-7 h-7 rounded-lg border-2 cursor-pointer transition-transform ${
-                    settings.polaroidColor === c.hex
-                      ? 'scale-110 border-pink-500'
-                      : 'border-slate-600'
-                  }`}
-                  style={{ backgroundColor: c.hex }}
-                />
-              ))}
-            </div>
           </div>
         </div>
       )}

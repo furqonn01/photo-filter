@@ -76,12 +76,14 @@ export interface FrameSettings {
 
   // Photobooth 4-cut
   photoboothColor: string;
+  photoboothTextColor?: string;
   photoboothText: string;
   photoboothDate: string;
 
   // Polaroid
   polaroidCaption: string;
   polaroidColor: string;
+  polaroidTextColor?: string;
 
   // Music Player
   musicSongTitle: string;

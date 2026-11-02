@@ -269,6 +269,31 @@ function roundRect(
   ctx.closePath();
 }
 
+// Helper to determine if a color is dark (returns true) or light (returns false)
+export function isColorDark(hexOrRgb: string): boolean {
+  if (!hexOrRgb) return false;
+  let r = 255, g = 255, b = 255;
+  const str = hexOrRgb.trim();
+  if (str.startsWith('#')) {
+    let hex = str.replace('#', '');
+    if (hex.length === 3) {
+      hex = hex.split('').map((c) => c + c).join('');
+    }
+    r = parseInt(hex.substring(0, 2), 16) || 0;
+    g = parseInt(hex.substring(2, 4), 16) || 0;
+    b = parseInt(hex.substring(4, 6), 16) || 0;
+  } else if (str.startsWith('rgb')) {
+    const m = str.match(/\d+/g);
+    if (m && m.length >= 3) {
+      r = parseInt(m[0]);
+      g = parseInt(m[1]);
+      b = parseInt(m[2]);
+    }
+  }
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance < 0.58;
+}
+
 // Background for frames like Polaroid or Photobooth
 function drawFrameBackground(
   ctx: CanvasRenderingContext2D,
@@ -279,20 +304,24 @@ function drawFrameBackground(
   _highRes: boolean
 ) {
   if (frame === 'polaroid') {
-    ctx.fillStyle = settings.polaroidColor || '#ffffff';
+    const bgColor = settings.polaroidColor || '#ffffff';
+    ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, width, height);
 
-    // Subtle paper texture drop shadow
-    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    // Subtle paper texture drop shadow / border
+    const isDark = isColorDark(bgColor);
+    ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)';
     ctx.lineWidth = 1;
     ctx.strokeRect(0, 0, width, height);
   } else if (frame === 'photobooth_4cut') {
-    // Photobooth pastel backdrop
-    ctx.fillStyle = settings.photoboothColor || '#fbcfe8';
+    // Photobooth pastel / chic backdrop
+    const bgColor = settings.photoboothColor || '#fbcfe8';
+    ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, width, height);
 
-    // Subtle cute pattern (tiny dots)
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+    // Subtle cute pattern (tiny dots) - adjust contrast according to dark/light bg
+    const isDark = isColorDark(bgColor);
+    ctx.fillStyle = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)';
     const dotSpacing = 28;
     for (let x = 14; x < width; x += dotSpacing) {
       for (let y = 14; y < height; y += dotSpacing) {
@@ -1239,21 +1268,40 @@ function drawFrameForeground(
       ctx.save();
       const bottomAreaY = photoBounds.y + photoBounds.h;
       const bottomH = height - bottomAreaY;
+      const bgColor = settings.photoboothColor || '#fbcfe8';
+      const isDark = isColorDark(bgColor);
 
-      // Bottom Korean stamp and date
-      ctx.fillStyle = '#1e1b4b'; // Deep navy or black
-      ctx.font = `700 ${18 * scale}px "Plus Jakarta Sans", sans-serif`;
+      // Adaptive text color: custom or automatic high-contrast
+      const mainTextColor =
+        settings.photoboothTextColor && settings.photoboothTextColor !== 'auto'
+          ? settings.photoboothTextColor
+          : isDark
+          ? '#ffffff'
+          : '#1e1b4b';
+
+      const subTextColor = isDark ? '#cbd5e1' : '#475569';
+
+      // Drop shadow for crisp readability against any background
+      ctx.save();
+      ctx.shadowColor = isDark ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.5)';
+      ctx.shadowBlur = isDark ? 4 : 2;
+      ctx.fillStyle = mainTextColor;
+      ctx.font = `800 ${18 * scale}px "Plus Jakarta Sans", sans-serif`;
       ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       ctx.fillText(settings.photoboothText || '인생네컷 ♡ HARU FILM', width / 2, bottomAreaY + bottomH * 0.42);
 
-      ctx.font = `500 ${11 * scale}px "VT323", monospace`;
-      ctx.fillStyle = '#475569';
-      ctx.fillText(settings.photoboothDate || '2026. 11. 02  MEMORIES', width / 2, bottomAreaY + bottomH * 0.7);
+      ctx.font = `600 ${12 * scale}px "Plus Jakarta Sans", "VT323", monospace`;
+      ctx.fillStyle = subTextColor;
+      ctx.fillText(settings.photoboothDate || '2026. 11. 02  MEMORIES', width / 2, bottomAreaY + bottomH * 0.72);
+      ctx.restore();
 
-      // Cute cute stamps on bottom left and right
+      // Cute stamps on bottom left and right
       ctx.font = `${18 * scale}px sans-serif`;
-      ctx.fillText('✨', width * 0.18, bottomAreaY + bottomH * 0.55);
-      ctx.fillText('🌸', width * 0.82, bottomAreaY + bottomH * 0.55);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(isDark ? '✨' : '💖', width * 0.16, bottomAreaY + bottomH * 0.55);
+      ctx.fillText(isDark ? '🌟' : '🌸', width * 0.84, bottomAreaY + bottomH * 0.55);
 
       ctx.restore();
       break;
@@ -1264,26 +1312,41 @@ function drawFrameForeground(
       ctx.save();
       const bottomAreaY = photoBounds.y + photoBounds.h;
       const bottomH = height - bottomAreaY;
+      const bgColor = settings.polaroidColor || '#ffffff';
+      const isDark = isColorDark(bgColor);
 
-      // Handwritten caption
-      ctx.fillStyle = '#1f2937';
-      ctx.font = `700 ${22 * scale}px "Caveat", cursive, sans-serif`;
+      const captionColor =
+        settings.polaroidTextColor && settings.polaroidTextColor !== 'auto'
+          ? settings.polaroidTextColor
+          : isDark
+          ? '#f8fafc'
+          : '#1f2937';
+
+      // Handwritten caption with crisp contrast
+      ctx.save();
+      ctx.shadowColor = isDark ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.4)';
+      ctx.shadowBlur = isDark ? 4 : 1;
+      ctx.fillStyle = captionColor;
+      ctx.font = `700 ${23 * scale}px "Caveat", cursive, sans-serif`;
       ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       ctx.fillText(settings.polaroidCaption || 'Sweet Memories ♡', width / 2, bottomAreaY + bottomH * 0.52);
+      ctx.restore();
 
       // Washi Tape at top center
-      const tapeW = 70 * scale;
+      const tapeW = 72 * scale;
       const tapeH = 18 * scale;
       const tapeX = width / 2 - tapeW / 2;
       const tapeY = photoBounds.y - tapeH / 2;
 
       ctx.save();
       ctx.translate(tapeX + tapeW / 2, tapeY + tapeH / 2);
-      ctx.rotate(-0.04);
-      ctx.fillStyle = 'rgba(251, 191, 36, 0.75)'; // Soft pastel washi tape
+      ctx.rotate(-0.035);
+      // Washi tape color contrasting with paper
+      ctx.fillStyle = isDark ? 'rgba(244, 114, 182, 0.85)' : 'rgba(251, 191, 36, 0.8)';
       ctx.fillRect(-tapeW / 2, -tapeH / 2, tapeW, tapeH);
-      // Tape edge zigzag
-      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+      ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.12)';
+      ctx.lineWidth = 1;
       ctx.strokeRect(-tapeW / 2, -tapeH / 2, tapeW, tapeH);
       ctx.restore();
 
