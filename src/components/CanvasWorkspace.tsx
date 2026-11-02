@@ -148,6 +148,30 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           }
         }
 
+        // Check tap on Flash button (cycles Auto -> On -> Off)
+        const ctrlY = 60 * baseScale;
+        const flashX = 32 * baseScale;
+        if (Math.hypot(canvasX - flashX, canvasY - ctrlY) <= 20 * baseScale) {
+          sounds.playPop();
+          onUpdateFrameSettings((prev) => {
+            const cur = prev.iphoneFlash || 'auto';
+            const next = cur === 'auto' ? 'on' : cur === 'on' ? 'off' : 'auto';
+            return { ...prev, iphoneFlash: next };
+          });
+          return;
+        }
+
+        // Check tap on Night Mode button
+        const nightX = 78 * baseScale;
+        if (Math.hypot(canvasX - nightX, canvasY - ctrlY) <= 22 * baseScale) {
+          sounds.playPop();
+          onUpdateFrameSettings((prev) => ({
+            ...prev,
+            iphoneNightMode: prev.iphoneNightMode === false ? true : false,
+          }));
+          return;
+        }
+
         // Check tap on Shutter button
         const shutterY = height - 76 * baseScale;
         if (Math.hypot(canvasX - width / 2, canvasY - shutterY) <= 38 * baseScale) {

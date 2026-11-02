@@ -47,6 +47,8 @@ const INITIAL_FRAME_SETTINGS: FrameSettings = {
   iphoneShowDynamicIsland: true,
   iphoneBarStyle: 'solid',
   iphoneShowLevel: true,
+  iphoneFlash: 'auto',
+  iphoneNightMode: true,
   reelsUsername: '@cutie.vibes',
   reelsCaption: 'Weekend vibes check ✨ #cutecore #reels',
   reelsLikes: '348.2K',

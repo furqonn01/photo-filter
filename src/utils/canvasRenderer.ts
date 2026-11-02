@@ -729,92 +729,111 @@ function drawFrameForeground(
         ctx.fill();
       }
 
-      // 3. TOP CAMERA CONTROLS BAR (Directly below status bar)
+      // 3. TOP CAMERA CONTROLS BAR (Authentic iOS Top Bar Layout based on Apple references)
       const ctrlY = 60 * baseScale;
+      const flashMode = settings.iphoneFlash || 'auto';
 
-      // A. Authentic iOS Flash Icon with AUTO badge
+      // A. Authentic iOS Flash Icon (Apple SF Symbol bolt.badge.a.fill, bolt.fill, or bolt.slash.fill)
       const flashX = 32 * baseScale;
-      // Glass button circle
+      // Frosted glass button circle
       ctx.beginPath();
       ctx.arc(flashX, ctrlY, 15 * baseScale, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
       ctx.lineWidth = 0.8 * baseScale;
       ctx.stroke();
 
-      // iOS Lightning Bolt Vector (crisp SF Symbol)
-      ctx.fillStyle = '#ffd60a';
+      const isFlashActive = flashMode === 'auto' || flashMode === 'on';
+      const boltColor = isFlashActive ? '#ffd60a' : '#ffffff';
+
+      // iOS Lightning Bolt Vector
+      ctx.fillStyle = boltColor;
       ctx.beginPath();
-      ctx.moveTo(flashX + 1.2 * baseScale, ctrlY - 7 * baseScale);
-      ctx.lineTo(flashX - 5.5 * baseScale, ctrlY + 0.8 * baseScale);
-      ctx.lineTo(flashX - 0.8 * baseScale, ctrlY + 0.8 * baseScale);
-      ctx.lineTo(flashX - 2.8 * baseScale, ctrlY + 7 * baseScale);
+      ctx.moveTo(flashX + 1.2 * baseScale, ctrlY - 7.5 * baseScale);
+      ctx.lineTo(flashX - 5.5 * baseScale, ctrlY + 0.5 * baseScale);
+      ctx.lineTo(flashX - 0.8 * baseScale, ctrlY + 0.5 * baseScale);
+      ctx.lineTo(flashX - 2.8 * baseScale, ctrlY + 7.5 * baseScale);
       ctx.lineTo(flashX + 5.5 * baseScale, ctrlY - 1 * baseScale);
       ctx.lineTo(flashX + 0.8 * baseScale, ctrlY - 1 * baseScale);
       ctx.closePath();
       ctx.fill();
 
-      // "AUTO" label next to flash
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.font = `700 ${9 * baseScale}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('AUTO', flashX + 18 * baseScale, ctrlY);
+      // If Flash Auto: Integrated Apple "A" badge on the bottom-right corner of the button
+      if (flashMode === 'auto') {
+        const badgeX = flashX + 6.5 * baseScale;
+        const badgeY = ctrlY + 5.5 * baseScale;
+        ctx.beginPath();
+        ctx.arc(badgeX, badgeY, 4.2 * baseScale, 0, Math.PI * 2);
+        ctx.fillStyle = '#18181b';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 0.6 * baseScale;
+        ctx.stroke();
 
-      // B. Authentic iOS Night Mode Pill (Crescent moon + 1s)
-      const nightX = 98 * baseScale;
-      const nightW = 46 * baseScale;
-      const nightH = 24 * baseScale;
-      roundRect(ctx, nightX - nightW / 2, ctrlY - nightH / 2, nightW, nightH, nightH / 2);
-      ctx.fillStyle = 'rgba(255, 214, 10, 0.18)';
-      ctx.fill();
-      ctx.strokeStyle = '#ffd60a';
-      ctx.lineWidth = 1.2 * baseScale;
-      roundRect(ctx, nightX - nightW / 2, ctrlY - nightH / 2, nightW, nightH, nightH / 2);
-      ctx.stroke();
+        ctx.fillStyle = '#ffd60a';
+        ctx.font = `800 ${6 * baseScale}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('A', badgeX, badgeY + 0.2 * baseScale);
+      } else if (flashMode === 'off') {
+        // Diagonal slash through bolt
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.6 * baseScale;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(flashX - 7 * baseScale, ctrlY - 7 * baseScale);
+        ctx.lineTo(flashX + 7 * baseScale, ctrlY + 7 * baseScale);
+        ctx.stroke();
+      }
 
-      // Crescent Moon Vector
-      ctx.fillStyle = '#ffd60a';
-      ctx.beginPath();
-      ctx.arc(nightX - 9 * baseScale, ctrlY, 5 * baseScale, 0.6 * Math.PI, 1.8 * Math.PI, false);
-      ctx.arc(nightX - 7 * baseScale, ctrlY, 4.2 * baseScale, 1.7 * Math.PI, 0.7 * Math.PI, true);
-      ctx.closePath();
-      ctx.fill();
+      // B. Authentic iOS Night Mode Pill (Contextual next to Flash, with generous spacing)
+      if (settings.iphoneNightMode !== false && flashMode !== 'on') {
+        const nightX = 78 * baseScale;
+        const nightW = 44 * baseScale;
+        const nightH = 24 * baseScale;
+        roundRect(ctx, nightX - nightW / 2, ctrlY - nightH / 2, nightW, nightH, nightH / 2);
+        ctx.fillStyle = 'rgba(255, 214, 10, 0.18)';
+        ctx.fill();
+        ctx.strokeStyle = '#ffd60a';
+        ctx.lineWidth = 1.2 * baseScale;
+        roundRect(ctx, nightX - nightW / 2, ctrlY - nightH / 2, nightW, nightH, nightH / 2);
+        ctx.stroke();
 
-      ctx.font = `700 ${10.5 * baseScale}px -apple-system, BlinkMacSystemFont, sans-serif`;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('1s', nightX + 1 * baseScale, ctrlY + 0.5 * baseScale);
+        // Crescent Moon Vector
+        ctx.fillStyle = '#ffd60a';
+        ctx.beginPath();
+        ctx.arc(nightX - 8.5 * baseScale, ctrlY, 4.5 * baseScale, 0.6 * Math.PI, 1.8 * Math.PI, false);
+        ctx.arc(nightX - 6.5 * baseScale, ctrlY, 3.8 * baseScale, 1.7 * Math.PI, 0.7 * Math.PI, true);
+        ctx.closePath();
+        ctx.fill();
 
-      // C. Exposure Drawer Chevron (Center Top)
+        ctx.font = `700 ${10.5 * baseScale}px -apple-system, BlinkMacSystemFont, sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('1s', nightX + 1.5 * baseScale, ctrlY + 0.5 * baseScale);
+      }
+
+      // C. Exposure Drawer Chevron (Dead-Center Top, Apple minimalist standalone chevron)
       const chevX = width / 2;
-      ctx.beginPath();
-      ctx.arc(chevX, ctrlY, 13 * baseScale, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-      ctx.lineWidth = 0.8 * baseScale;
-      ctx.stroke();
-
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.8 * baseScale;
+      ctx.lineWidth = 2 * baseScale;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.beginPath();
-      ctx.moveTo(chevX - 4.5 * baseScale, ctrlY + 2 * baseScale);
-      ctx.lineTo(chevX, ctrlY - 2.5 * baseScale);
-      ctx.lineTo(chevX + 4.5 * baseScale, ctrlY + 2 * baseScale);
+      ctx.moveTo(chevX - 5.5 * baseScale, ctrlY + 2.5 * baseScale);
+      ctx.lineTo(chevX, ctrlY - 3 * baseScale);
+      ctx.lineTo(chevX + 5.5 * baseScale, ctrlY + 2.5 * baseScale);
       ctx.stroke();
 
-      // D. RAW MAX / 48MP Pill Badge
-      const rawX = width - 84 * baseScale;
-      const rawW = 38 * baseScale;
-      const rawH = 22 * baseScale;
+      // D. RAW MAX / 48MP Pill Badge (Right Wing)
+      const rawX = width - 78 * baseScale;
+      const rawW = 36 * baseScale;
+      const rawH = 20 * baseScale;
       roundRect(ctx, rawX - rawW / 2, ctrlY - rawH / 2, rawW, rawH, 5 * baseScale);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.32)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
       ctx.lineWidth = 0.9 * baseScale;
       roundRect(ctx, rawX - rawW / 2, ctrlY - rawH / 2, rawW, rawH, 5 * baseScale);
       ctx.stroke();
@@ -825,14 +844,14 @@ function drawFrameForeground(
       ctx.textBaseline = 'middle';
       ctx.fillText('RAW', rawX, ctrlY);
 
-      // E. Authentic iOS Live Photo Icon (3 Concentric Rings)
+      // E. Authentic iOS Live Photo Icon (Far-Right Wing, symmetrical with Flash)
       const liveX = width - 32 * baseScale;
       // Glass button circle
       ctx.beginPath();
       ctx.arc(liveX, ctrlY, 15 * baseScale, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
       ctx.lineWidth = 0.8 * baseScale;
       ctx.stroke();
 

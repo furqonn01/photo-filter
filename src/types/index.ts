@@ -64,6 +64,8 @@ export interface FrameSettings {
   iphoneShowDynamicIsland?: boolean; // Tampilan Dynamic Island & Status Bar iOS
   iphoneBarStyle?: 'solid' | 'translucent'; // Bar Hitam Pekat Asli iPhone vs Transparan
   iphoneShowLevel?: boolean; // Indikator Level Horizon iOS 17
+  iphoneFlash?: 'auto' | 'on' | 'off'; // Mode Flash (Auto, On, Off)
+  iphoneNightMode?: boolean; // Night Mode pill status
 
   // Reels
   reelsUsername: string;

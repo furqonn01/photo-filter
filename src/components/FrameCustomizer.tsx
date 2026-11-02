@@ -189,6 +189,34 @@ export const FrameCustomizer: React.FC<FrameCustomizerProps> = ({
             </div>
           </div>
 
+          {/* Flash Mode Selector (Auto, On, Off) */}
+          <div>
+            <label className="block text-slate-400 mb-1 font-medium">Flash Kamera iPhone</label>
+            <div className="grid grid-cols-3 gap-1.5">
+              {[
+                { id: 'auto', label: '⚡ Auto' },
+                { id: 'on', label: '⚡ On' },
+                { id: 'off', label: '🚫 Off' },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => {
+                    sounds.playPop();
+                    onUpdateSettings((prev) => ({ ...prev, iphoneFlash: f.id as 'auto' | 'on' | 'off' }));
+                  }}
+                  className={`py-1.5 rounded-lg text-[10px] font-bold border transition cursor-pointer text-center ${
+                    (settings.iphoneFlash || 'auto') === f.id
+                      ? 'bg-amber-400 text-slate-950 border-amber-300 font-extrabold shadow-sm shadow-amber-400/20'
+                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Gaya Viewport Bar: Solid Black (Asli iPhone) vs Transparan */}
           <div>
             <label className="block text-slate-400 mb-1 font-medium">Gaya Tampilan Bar Viewfinder</label>
@@ -272,6 +300,18 @@ export const FrameCustomizer: React.FC<FrameCustomizerProps> = ({
                 className="rounded text-pink-500 focus:ring-0"
               />
               <span className="text-slate-300 font-medium text-[11px]">Fokus ☀️</span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer bg-slate-900 border border-slate-700 px-2.5 py-2 rounded-xl hover:bg-slate-800 transition col-span-2">
+              <input
+                type="checkbox"
+                checked={settings.iphoneNightMode !== false}
+                onChange={(e) =>
+                  onUpdateSettings((prev) => ({ ...prev, iphoneNightMode: e.target.checked }))
+                }
+                className="rounded text-pink-500 focus:ring-0"
+              />
+              <span className="text-slate-300 font-medium text-[11px]">Night Mode (1s) 🌙</span>
             </label>
           </div>
         </div>
