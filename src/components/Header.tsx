@@ -31,17 +31,17 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#0f1422]/90 backdrop-blur-md border-b border-slate-800/80 px-4 py-3 sm:px-6">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+    <header className="sticky top-0 z-40 bg-[#0f1422]/95 backdrop-blur-md border-b border-slate-800/80 px-2.5 py-2.5 sm:px-6 sm:py-3">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
         {/* Logo and Brand */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-pink-500/20 text-white">
-            <Camera className="w-5 h-5 animate-pulse" />
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-pink-500/20 text-white">
+            <Camera className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-extrabold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-pink-400 via-purple-300 to-indigo-300 bg-clip-text text-transparent">
-                RetroSnap Studio
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <h1 className="font-extrabold text-base sm:text-xl tracking-tight bg-gradient-to-r from-pink-400 via-purple-300 to-indigo-300 bg-clip-text text-transparent">
+                RetroSnap
               </h1>
               <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">
                 <Sparkles className="w-3 h-3" /> Cute & Retro
@@ -53,8 +53,8 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Center: Privacy Local Browser Badge */}
-        <div className="relative">
+        {/* Center: Privacy Local Browser Badge (Visible on Tablet/Desktop) */}
+        <div className="relative hidden sm:block">
           <button
             onMouseEnter={() => setShowPrivacyTooltip(true)}
             onMouseLeave={() => setShowPrivacyTooltip(false)}
@@ -77,12 +77,12 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Right Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           {/* Sound Toggle */}
           <button
             onClick={toggleSound}
             title={soundEnabled ? 'Matikan Suara' : 'Nyalakan Suara'}
-            className={`p-2 rounded-xl border transition-all cursor-pointer ${
+            className={`p-1.5 sm:p-2 rounded-xl border transition-all cursor-pointer ${
               soundEnabled
                 ? 'bg-slate-800 text-pink-400 border-pink-500/30 shadow-sm shadow-pink-500/10'
                 : 'bg-slate-800/60 text-slate-400 border-slate-700/60 hover:text-slate-200'
@@ -98,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({
               onReset();
             }}
             title="Reset Pengaturan"
-            className="p-2 rounded-xl bg-slate-800/80 text-slate-300 border border-slate-700 hover:bg-slate-700 transition cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl bg-slate-800/80 text-slate-300 border border-slate-700 hover:bg-slate-700 transition cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -109,9 +109,9 @@ export const Header: React.FC<HeaderProps> = ({
               if (soundEnabled) sounds.playPop();
               onOpenCamera();
             }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition cursor-pointer"
+            className="flex items-center gap-1 px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition cursor-pointer"
           >
-            <Camera className="w-4 h-4 text-purple-400" />
+            <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400" />
             <span className="hidden md:inline">Ambil Foto</span>
             <span className="md:hidden">Kamera</span>
           </button>
@@ -122,9 +122,9 @@ export const Header: React.FC<HeaderProps> = ({
               if (soundEnabled) sounds.playPop();
               onUploadClick();
             }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 text-purple-200 text-xs font-semibold border border-purple-500/30 transition cursor-pointer"
+            className="flex items-center gap-1 px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 text-purple-200 text-xs font-semibold border border-purple-500/30 transition cursor-pointer"
           >
-            <Upload className="w-4 h-4" />
+            <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span className="hidden md:inline">Pilih Foto</span>
             <span className="md:hidden">Galeri</span>
           </button>
@@ -135,9 +135,9 @@ export const Header: React.FC<HeaderProps> = ({
               if (soundEnabled) sounds.playPop();
               onExportClick();
             }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white text-xs font-bold shadow-md shadow-pink-500/25 transition-all cursor-pointer transform hover:scale-[1.02] active:scale-[0.98]"
+            className="flex items-center gap-1 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white text-xs font-bold shadow-md shadow-pink-500/25 transition-all cursor-pointer transform hover:scale-[1.02] active:scale-[0.98]"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>Simpan</span>
           </button>
         </div>

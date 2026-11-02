@@ -54,6 +54,11 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDraggingSticker, setIsDraggingSticker] = useState(false);
 
+  // Active pointers tracker for multi-touch (pinch-to-zoom & smooth touch drag)
+  const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const initialPinchDistRef = useRef<number | null>(null);
+  const initialZoomRef = useRef<number>(1);
+
   // Re-render canvas on any state change
   const draw = useCallback(() => {
     if (!canvasRef.current) return;
@@ -74,72 +79,131 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     draw();
   }, [draw]);
 
-  // Handle Pan Drag for Photo
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // Unified Pointer Down Handler (Mouse, Touch, Pen)
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!canvasRef.current) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
 
-    // Check if clicked near any sticker
-    const { width, height } = canvasRef.current;
-    const scaleX = width / rect.width;
-    const scaleY = height / rect.height;
-    const canvasX = mouseX * scaleX;
-    const canvasY = mouseY * scaleY;
+    // Track active pointer
+    activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-    // Check hit on stickers (in reverse order so top-most is chosen)
-    let hitSticker: StickerItem | null = null;
-    for (let i = stickers.length - 1; i >= 0; i--) {
-      const s = stickers[i];
-      const sX = (s.x / 100) * width;
-      const sY = (s.y / 100) * height;
-      const dist = Math.sqrt(Math.pow(canvasX - sX, 2) + Math.pow(canvasY - sY, 2));
-      if (dist < 40 * s.scale) {
-        hitSticker = s;
-        break;
-      }
+    // Capture pointer to track gestures even if finger leaves canvas boundary
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Ignored if not supported
     }
 
-    if (hitSticker) {
-      setSelectedStickerId(hitSticker.id);
-      setIsDraggingSticker(true);
-      setDragStartPos({ x: e.clientX, y: e.clientY });
-      sounds.playPop();
-    } else {
-      setSelectedStickerId(null);
-      setIsDraggingPhoto(true);
-      setDragStartPos({ x: e.clientX, y: e.clientY });
+    // 1 Pointer: Single finger or mouse click for dragging photo or sticker
+    if (activePointersRef.current.size === 1) {
+      const rect = canvasRef.current.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      const { width, height } = canvasRef.current;
+      const scaleX = width / (rect.width || 1);
+      const scaleY = height / (rect.height || 1);
+      const canvasX = mouseX * scaleX;
+      const canvasY = mouseY * scaleY;
+
+      // Check hit on stickers (in reverse order so top-most is selected)
+      let hitSticker: StickerItem | null = null;
+      for (let i = stickers.length - 1; i >= 0; i--) {
+        const s = stickers[i];
+        const sX = (s.x / 100) * width;
+        const sY = (s.y / 100) * height;
+        // Generous touch hit radius for mobile fingers
+        const hitRadius = Math.max(45, 55 * s.scale);
+        const dist = Math.hypot(canvasX - sX, canvasY - sY);
+        if (dist < hitRadius) {
+          hitSticker = s;
+          break;
+        }
+      }
+
+      if (hitSticker) {
+        setSelectedStickerId(hitSticker.id);
+        setIsDraggingSticker(true);
+        setIsDraggingPhoto(false);
+        setDragStartPos({ x: e.clientX, y: e.clientY });
+        sounds.playPop();
+      } else {
+        setSelectedStickerId(null);
+        setIsDraggingPhoto(true);
+        setIsDraggingSticker(false);
+        setDragStartPos({ x: e.clientX, y: e.clientY });
+      }
+    } else if (activePointersRef.current.size >= 2) {
+      // 2 or more pointers: Touchscreen Pinch to Zoom!
+      setIsDraggingPhoto(false);
+      setIsDraggingSticker(false);
+      const pts = Array.from(activePointersRef.current.values());
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      initialPinchDistRef.current = dist > 0 ? dist : 1;
+      initialZoomRef.current = adjustments.zoom;
     }
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // Unified Pointer Move Handler
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!canvasRef.current) return;
+    activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    // Handle 2-Finger Touchscreen Pinch-to-Zoom
+    if (activePointersRef.current.size >= 2 && initialPinchDistRef.current) {
+      const pts = Array.from(activePointersRef.current.values());
+      const currentDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      const ratio = currentDist / initialPinchDistRef.current;
+      const targetZoom = Math.max(0.5, Math.min(3.0, initialZoomRef.current * ratio));
+      onUpdateAdjustments((prev) => ({
+        ...prev,
+        zoom: Math.round(targetZoom * 100) / 100,
+      }));
+      return;
+    }
+
+    // 1-Pointer Dragging Photo
     if (isDraggingPhoto) {
-      const dx = e.clientX - dragStartPos.x;
-      const dy = e.clientY - dragStartPos.y;
+      const rect = canvasRef.current.getBoundingClientRect();
+      const scaleRatio = rect.width > 0 ? canvasRef.current.width / rect.width : 1;
+      const dx = (e.clientX - dragStartPos.x) * scaleRatio;
+      const dy = (e.clientY - dragStartPos.y) * scaleRatio;
       setDragStartPos({ x: e.clientX, y: e.clientY });
       onUpdateAdjustments((prev) => ({
         ...prev,
         panX: prev.panX + dx,
         panY: prev.panY + dy,
       }));
-    } else if (isDraggingSticker && selectedStickerId && canvasRef.current) {
+    } else if (isDraggingSticker && selectedStickerId) {
+      // 1-Pointer Dragging Sticker
       const rect = canvasRef.current.getBoundingClientRect();
-      const dx = ((e.clientX - dragStartPos.x) / rect.width) * 100;
-      const dy = ((e.clientY - dragStartPos.y) / rect.height) * 100;
+      const dx = ((e.clientX - dragStartPos.x) / (rect.width || 1)) * 100;
+      const dy = ((e.clientY - dragStartPos.y) / (rect.height || 1)) * 100;
       setDragStartPos({ x: e.clientX, y: e.clientY });
 
       onUpdateSticker(selectedStickerId, (prev) => ({
         ...prev,
-        x: Math.max(5, Math.min(95, prev.x + dx)),
-        y: Math.max(5, Math.min(95, prev.y + dy)),
+        x: Math.max(2, Math.min(98, prev.x + dx)),
+        y: Math.max(2, Math.min(98, prev.y + dy)),
       }));
     }
   };
 
-  const handleMouseUp = () => {
-    setIsDraggingPhoto(false);
-    setIsDraggingSticker(false);
+  // Unified Pointer Up & Cancel Handler
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    activePointersRef.current.delete(e.pointerId);
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      // Ignored
+    }
+
+    if (activePointersRef.current.size < 2) {
+      initialPinchDistRef.current = null;
+    }
+    if (activePointersRef.current.size === 0) {
+      setIsDraggingPhoto(false);
+      setIsDraggingSticker(false);
+    }
   };
 
   // Zoom helpers
@@ -214,7 +278,8 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       {/* Main Canvas Viewport */}
       <div
         ref={containerRef}
-        className="relative w-full flex-1 min-h-[380px] max-h-[640px] flex items-center justify-center p-3 sm:p-5 bg-[#070a11]/90 rounded-3xl border border-slate-800/90 shadow-2xl overflow-hidden backdrop-blur-md"
+        style={{ touchAction: 'none' }}
+        className="relative w-full h-[48vh] min-h-[300px] max-h-[480px] sm:h-[55vh] sm:max-h-[560px] lg:h-[620px] lg:max-h-[660px] flex items-center justify-center p-2 sm:p-5 bg-[#070a11]/90 rounded-2xl sm:rounded-3xl border border-slate-800/90 shadow-2xl overflow-hidden backdrop-blur-md touch-none select-none"
       >
         {/* Subtle grid backdrop pattern */}
         <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none" />
@@ -222,11 +287,12 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         <div className="relative max-w-full max-h-full flex items-center justify-center shadow-2xl rounded-2xl overflow-visible">
           <canvas
             ref={canvasRef}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            className={`max-w-full max-h-[560px] w-auto h-auto object-contain rounded-xl shadow-2xl border border-white/10 ${
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            style={{ touchAction: 'none' }}
+            className={`max-w-full max-h-[42vh] sm:max-h-[50vh] lg:max-h-[560px] w-auto h-auto object-contain rounded-xl shadow-2xl border border-white/10 touch-none select-none ${
               isDraggingPhoto
                 ? 'cursor-grabbing'
                 : selectedStickerId
@@ -237,8 +303,8 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
           {/* Floating Action Badge on top of canvas for selected sticker */}
           {selectedSticker && (
-            <div className="absolute top-3 right-3 z-30 flex items-center gap-2 bg-slate-900/90 backdrop-blur-md border border-pink-500/50 px-3 py-1.5 rounded-full shadow-xl animate-in fade-in">
-              <span className="text-xs text-pink-300 font-bold">
+            <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-30 flex items-center gap-1 sm:gap-1.5 bg-slate-900/95 backdrop-blur-md border border-pink-500/50 px-2 sm:px-3 py-1 rounded-full shadow-xl animate-in fade-in max-w-[94%]">
+              <span className="text-xs text-pink-300 font-bold max-w-[80px] sm:max-w-none truncate">
                 {selectedSticker.content}
               </span>
 
@@ -252,9 +318,9 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                   }));
                 }}
                 title="Putar Stiker"
-                className="p-1 rounded-full hover:bg-slate-800 text-slate-300 cursor-pointer"
+                className="w-7 h-7 rounded-full hover:bg-slate-800 text-slate-300 flex items-center justify-center cursor-pointer"
               >
-                <RotateCw className="w-3 h-3 text-pink-400" />
+                <RotateCw className="w-3.5 h-3.5 text-pink-400" />
               </button>
 
               {/* Scale Up */}
@@ -267,7 +333,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                   }));
                 }}
                 title="Perbesar Stiker"
-                className="p-1 rounded-full hover:bg-slate-800 text-slate-300 text-xs font-bold cursor-pointer"
+                className="w-7 h-7 rounded-full hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center cursor-pointer"
               >
                 +
               </button>
@@ -282,7 +348,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                   }));
                 }}
                 title="Perkecil Stiker"
-                className="p-1 rounded-full hover:bg-slate-800 text-slate-300 text-xs font-bold cursor-pointer"
+                className="w-7 h-7 rounded-full hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center cursor-pointer"
               >
                 -
               </button>
@@ -295,52 +361,52 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                   setSelectedStickerId(null);
                 }}
                 title="Hapus Stiker"
-                className="p-1 rounded-full hover:bg-rose-500/20 text-rose-400 cursor-pointer"
+                className="w-7 h-7 rounded-full hover:bg-rose-500/20 text-rose-400 flex items-center justify-center cursor-pointer"
               >
-                <Trash2 className="w-3 h-3" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           )}
         </div>
 
         {/* Floating Quick Navigation Toolbars */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-700/80 shadow-2xl">
+        <div className="absolute bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 sm:gap-1.5 bg-slate-900/95 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-slate-700/80 shadow-2xl max-w-[96%] overflow-x-auto no-scrollbar z-20">
           <button
             onClick={() => handleZoom(-0.15)}
             title="Zoom Out"
-            className="p-1.5 rounded-full hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
+            className="p-1 sm:p-1.5 rounded-full hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
           >
-            <ZoomOut className="w-4 h-4" />
+            <ZoomOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
 
-          <span className="text-xs font-mono font-bold text-slate-300 px-1">
+          <span className="text-[11px] sm:text-xs font-mono font-bold text-slate-300 px-0.5 sm:px-1">
             {Math.round(adjustments.zoom * 100)}%
           </span>
 
           <button
             onClick={() => handleZoom(0.15)}
             title="Zoom In"
-            className="p-1.5 rounded-full hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
+            className="p-1 sm:p-1.5 rounded-full hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
           >
-            <ZoomIn className="w-4 h-4" />
+            <ZoomIn className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
 
-          <div className="w-[1px] h-4 bg-slate-700 mx-1" />
+          <div className="w-[1px] h-3.5 sm:h-4 bg-slate-700 mx-0.5 sm:mx-1" />
 
           <button
             onClick={handleResetPosition}
             title="Reset Posisi & Zoom"
-            className="p-1.5 rounded-full hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
+            className="p-1 sm:p-1.5 rounded-full hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
           >
-            <Maximize2 className="w-3.5 h-3.5" />
+            <Maximize2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           </button>
 
           {/* Quick iPhone Frame Scale Control directly on canvas */}
           {frame === 'iphone' && onUpdateFrameSettings && (
             <>
-              <div className="w-[1px] h-4 bg-slate-700 mx-1" />
-              <div className="flex items-center gap-1">
-                <span className="text-[11px] text-amber-400 font-bold hidden sm:inline">📱 Frame:</span>
+              <div className="w-[1px] h-3.5 sm:h-4 bg-slate-700 mx-0.5 sm:mx-1" />
+              <div className="flex items-center gap-0.5 sm:gap-1">
+                <span className="text-[10px] sm:text-[11px] text-amber-400 font-bold hidden sm:inline">📱 Frame:</span>
                 <button
                   onClick={() => {
                     sounds.playPop();
@@ -354,7 +420,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                 >
                   -
                 </button>
-                <span className="text-xs font-mono font-bold text-amber-300 min-w-[34px] text-center">
+                <span className="text-[11px] sm:text-xs font-mono font-bold text-amber-300 min-w-[28px] sm:min-w-[34px] text-center">
                   {Math.round((frameSettings.iphoneFrameScale ?? 1.0) * 100)}%
                 </span>
                 <button
@@ -374,9 +440,10 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
             </>
           )}
 
-          <div className="hidden sm:flex items-center gap-1 text-[11px] text-slate-400 pl-1">
+          <div className="flex items-center gap-1 text-[10px] sm:text-[11px] text-slate-400 pl-1 whitespace-nowrap">
             <Move className="w-3 h-3 text-pink-400" />
-            <span>Tahan & Geser Foto</span>
+            <span className="hidden sm:inline">Tahan & Geser Foto</span>
+            <span className="sm:hidden">Geser • Cubit Zoom</span>
           </div>
         </div>
       </div>

@@ -176,7 +176,7 @@ export function App() {
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-2 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-5">
         {/* Left Column: Canvas Preview Workspace (8 Cols) */}
         <section className="lg:col-span-7 xl:col-span-8 flex flex-col">
           <CanvasWorkspace
@@ -204,13 +204,13 @@ export function App() {
         {/* Right Column: Controls & Filter Panels (5 Cols) */}
         <aside className="lg:col-span-5 xl:col-span-4 flex flex-col space-y-3.5">
           {/* Navigation Pill Tabs */}
-          <div className="flex bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 backdrop-blur-md overflow-x-auto no-scrollbar gap-1 text-xs">
+          <div className="sticky top-[56px] sm:top-[64px] z-30 lg:static flex bg-slate-900/95 p-1 sm:p-1.5 rounded-2xl border border-slate-800 backdrop-blur-md overflow-x-auto no-scrollbar gap-1 text-xs shadow-lg lg:shadow-none">
             <button
               onClick={() => {
                 sounds.playPop();
                 setActiveTab('frames');
               }}
-              className={`flex-1 min-w-[70px] py-2 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`flex-1 min-w-[62px] sm:min-w-[70px] py-2 px-2 sm:px-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'frames'
                   ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/20'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
@@ -225,7 +225,7 @@ export function App() {
                 sounds.playPop();
                 setActiveTab('filters');
               }}
-              className={`flex-1 min-w-[70px] py-2 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`flex-1 min-w-[62px] sm:min-w-[70px] py-2 px-2 sm:px-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'filters'
                   ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/20'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
@@ -241,7 +241,7 @@ export function App() {
                   sounds.playPop();
                   setActiveTab('customize');
                 }}
-                className={`flex-1 min-w-[70px] py-2 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                className={`flex-1 min-w-[62px] sm:min-w-[70px] py-2 px-2 sm:px-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   activeTab === 'customize'
                     ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/20'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
@@ -257,7 +257,7 @@ export function App() {
                 sounds.playPop();
                 setActiveTab('adjust');
               }}
-              className={`flex-1 min-w-[70px] py-2 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`flex-1 min-w-[62px] sm:min-w-[70px] py-2 px-2 sm:px-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'adjust'
                   ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/20'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
@@ -272,7 +272,7 @@ export function App() {
                 sounds.playPop();
                 setActiveTab('stickers');
               }}
-              className={`flex-1 min-w-[70px] py-2 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`flex-1 min-w-[62px] sm:min-w-[70px] py-2 px-2 sm:px-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'stickers'
                   ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/20'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
@@ -284,7 +284,7 @@ export function App() {
           </div>
 
           {/* Active Tab Panel Content */}
-          <div className="flex-1 space-y-3.5 overflow-y-auto max-h-[640px] pr-0.5">
+          <div className="flex-1 space-y-3.5 lg:overflow-y-auto lg:max-h-[640px] pr-0.5 pb-10 lg:pb-0">
             {activeTab === 'frames' && (
               <>
                 <FrameSelector currentFrame={frame} onSelectFrame={handleSelectFrame} />
