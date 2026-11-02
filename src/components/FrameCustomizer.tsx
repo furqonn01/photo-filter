@@ -207,7 +207,7 @@ export const FrameCustomizer: React.FC<FrameCustomizerProps> = ({
       {/* Reels Controls */}
       {currentFrame === 'reels' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div>
+          <div className="sm:col-span-2">
             <label className="block text-slate-400 mb-1 font-medium">Username (@)</label>
             <input
               type="text"
@@ -229,6 +229,19 @@ export const FrameCustomizer: React.FC<FrameCustomizerProps> = ({
                 onUpdateSettings((prev) => ({ ...prev, reelsLikes: e.target.value }))
               }
               placeholder="342.8K"
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-white focus:outline-none focus:border-pink-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-slate-400 mb-1 font-medium">Jumlah Komentar</label>
+            <input
+              type="text"
+              value={settings.reelsComments}
+              onChange={(e) =>
+                onUpdateSettings((prev) => ({ ...prev, reelsComments: e.target.value }))
+              }
+              placeholder="1,894"
               className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-white focus:outline-none focus:border-pink-500"
             />
           </div>

@@ -749,22 +749,16 @@ function drawFrameForeground(
       // 5. iOS CAMERA MODES SELECTOR
       const modes = ['CINEMATIC', 'VIDEO', 'PHOTO', 'PORTRAIT', 'PANO'];
       const activeMode = settings.iphoneCameraMode || 'PHOTO';
-      const modeY = height - bottomBarH + 22 * baseScale;
+      const modeY = height - bottomBarH + 24 * baseScale;
 
       modes.forEach((m, idx) => {
         const isCurrent = m === activeMode;
         const mX = width / 2 + (idx - 2) * 66 * baseScale;
         ctx.fillStyle = isCurrent ? '#facc15' : 'rgba(255, 255, 255, 0.65)';
-        ctx.font = `700 ${11.5 * baseScale}px -apple-system, BlinkMacSystemFont, sans-serif`;
+        ctx.font = `700 ${11.5 * baseScale}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
         ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.fillText(m, mX, modeY);
-
-        if (isCurrent) {
-          ctx.beginPath();
-          ctx.arc(mX, modeY + 7 * baseScale, 1.8 * baseScale, 0, Math.PI * 2);
-          ctx.fillStyle = '#facc15';
-          ctx.fill();
-        }
       });
 
       // 6. BOTTOM SHUTTER BUTTON (Apple iOS Signature Shutter)
@@ -842,22 +836,22 @@ function drawFrameForeground(
     }
 
     case 'reels': {
-      // Instagram / TikTok Reels Vertical Overlay (Vector Icons)
+      // Instagram / TikTok Reels Vertical Overlay (Authentic Instagram UI)
       ctx.save();
 
       // Gradient scrims
       const topScrim = ctx.createLinearGradient(0, 0, 0, 110 * scale);
-      topScrim.addColorStop(0, 'rgba(0,0,0,0.6)');
+      topScrim.addColorStop(0, 'rgba(0,0,0,0.65)');
       topScrim.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = topScrim;
       ctx.fillRect(0, 0, width, 110 * scale);
 
-      const botScrim = ctx.createLinearGradient(0, height - 180 * scale, 0, height);
+      const botScrim = ctx.createLinearGradient(0, height - 200 * scale, 0, height);
       botScrim.addColorStop(0, 'rgba(0,0,0,0)');
-      botScrim.addColorStop(0.5, 'rgba(0,0,0,0.5)');
-      botScrim.addColorStop(1, 'rgba(0,0,0,0.8)');
+      botScrim.addColorStop(0.4, 'rgba(0,0,0,0.4)');
+      botScrim.addColorStop(1, 'rgba(0,0,0,0.85)');
       ctx.fillStyle = botScrim;
-      ctx.fillRect(0, height - 180 * scale, width, 180 * scale);
+      ctx.fillRect(0, height - 200 * scale, width, 200 * scale);
 
       // Top Reels header
       ctx.fillStyle = '#ffffff';
@@ -875,7 +869,7 @@ function drawFrameForeground(
       ctx.lineTo(86 * scale, 32 * scale);
       ctx.stroke();
 
-      // Top-right camera icon
+      // Top-right camera icon with notch
       const topCamX = width - 26 * scale;
       const topCamY = 32 * scale;
       ctx.strokeStyle = '#ffffff';
@@ -885,90 +879,118 @@ function drawFrameForeground(
       ctx.beginPath();
       ctx.arc(topCamX, topCamY + 0.5 * scale, 3.5 * scale, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(topCamX - 4 * scale, topCamY - 9 * scale, 8 * scale, 2.5 * scale);
 
       // Right Action Bar (Instagram Heart, Comment, Share, More, Audio)
-      const actionX = width - 30 * scale;
-      const startY = height - 270 * scale;
+      const actionX = width - 36 * scale;
+      const startY = height - 280 * scale;
 
-      // 1. INSTAGRAM VECTOR HEART (White with shadow)
-      ctx.save();
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-      ctx.shadowBlur = 6;
-      ctx.fillStyle = '#ffffff';
-      const hY = startY;
-      ctx.beginPath();
-      const hS = 14 * scale;
-      ctx.moveTo(actionX, hY - hS * 0.2);
-      ctx.bezierCurveTo(actionX - hS * 0.6, hY - hS * 0.9, actionX - hS, hY - hS * 0.2, actionX, hY + hS * 0.8);
-      ctx.bezierCurveTo(actionX + hS, hY - hS * 0.2, actionX + hS * 0.6, hY - hS * 0.9, actionX, hY - hS * 0.2);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = `700 ${10.5 * scale}px -apple-system, BlinkMacSystemFont, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.fillText(settings.reelsLikes || '342.8K', actionX, hY + 22 * scale);
-
-      // 2. INSTAGRAM VECTOR COMMENT BUBBLE
-      const cY = startY + 54 * scale;
+      // 1. INSTAGRAM VECTOR HEART (Authentic White Outline with Drop Shadow)
       ctx.save();
       ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
       ctx.shadowBlur = 6;
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2.2 * scale;
-      ctx.fillStyle = '#ffffff';
-      // Rounded chat bubble
+      ctx.lineWidth = 2.4 * scale;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      const hY = startY;
+      const hS = 13 * scale;
       ctx.beginPath();
-      ctx.arc(actionX, cY - 2 * scale, 11 * scale, -0.2 * Math.PI, 1.2 * Math.PI);
-      ctx.lineTo(actionX - 12 * scale, cY + 11 * scale);
-      ctx.lineTo(actionX - 4 * scale, cY + 8 * scale);
+      ctx.moveTo(actionX, hY - hS * 0.35);
+      ctx.bezierCurveTo(actionX - hS * 0.65, hY - hS * 1.1, actionX - hS * 1.2, hY - hS * 0.3, actionX - hS * 1.2, hY + hS * 0.2);
+      ctx.bezierCurveTo(actionX - hS * 1.2, hY + hS * 0.7, actionX - hS * 0.35, hY + hS * 1.15, actionX, hY + hS * 1.45);
+      ctx.bezierCurveTo(actionX + hS * 0.35, hY + hS * 1.15, actionX + hS * 1.2, hY + hS * 0.7, actionX + hS * 1.2, hY + hS * 0.2);
+      ctx.bezierCurveTo(actionX + hS * 1.2, hY - hS * 0.3, actionX + hS * 0.65, hY - hS * 1.1, actionX, hY - hS * 0.35);
       ctx.closePath();
       ctx.stroke();
       ctx.restore();
 
-      ctx.font = `700 ${10.5 * scale}px -apple-system, BlinkMacSystemFont, sans-serif`;
-      ctx.fillText(settings.reelsComments || '1,894', actionX, cY + 22 * scale);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `700 ${11 * scale}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(settings.reelsLikes || '342.8K', actionX, hY + 28 * scale);
+
+      // 2. INSTAGRAM VECTOR COMMENT BUBBLE (Authentic Speech Bubble, NO sliced chord!)
+      const cY = startY + 58 * scale;
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+      ctx.shadowBlur = 6;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.4 * scale;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      const cR = 10.5 * scale;
+      ctx.beginPath();
+      // Start at bottom-left corner of circle (angle 0.72 * PI)
+      // Arc travels clockwise: bottom-left -> top-left -> top -> right -> bottom
+      ctx.arc(actionX, cY - 2 * scale, cR, 0.72 * Math.PI, 0.45 * Math.PI, false);
+      // Pointed tail extending to bottom-left
+      ctx.lineTo(actionX - 11.5 * scale, cY + 10.5 * scale);
+      // Connect cleanly back to starting edge of arc without cutting through circle
+      ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `700 ${11 * scale}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(settings.reelsComments || '1,894', actionX, cY + 26 * scale);
 
       // 3. INSTAGRAM VECTOR PAPER AIRPLANE (Share)
-      const sY = startY + 108 * scale;
+      const sY = startY + 120 * scale;
       ctx.save();
       ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
       ctx.shadowBlur = 6;
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2 * scale;
+      ctx.lineWidth = 2.4 * scale;
       ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
+
+      const pS = 12 * scale;
       ctx.beginPath();
-      // Tilted paper plane
-      ctx.moveTo(actionX + 11 * scale, sY - 9 * scale);
-      ctx.lineTo(actionX - 11 * scale, sY);
-      ctx.lineTo(actionX - 2 * scale, sY + 3 * scale);
-      ctx.lineTo(actionX, sY + 11 * scale);
-      ctx.lineTo(actionX + 3 * scale, sY + 4 * scale);
+      // Nose pointing top-right
+      ctx.moveTo(actionX + pS * 0.95, sY - pS * 0.95);
+      // Left wing
+      ctx.lineTo(actionX - pS * 0.95, sY - pS * 0.05);
+      // Center notch
+      ctx.lineTo(actionX - pS * 0.15, sY + pS * 0.25);
+      // Bottom wing
+      ctx.lineTo(actionX + pS * 0.25, sY + pS * 0.95);
       ctx.closePath();
       ctx.stroke();
-      // Crease fold
+
+      // Center fold crease
       ctx.beginPath();
-      ctx.moveTo(actionX - 2 * scale, sY + 3 * scale);
-      ctx.lineTo(actionX + 11 * scale, sY - 9 * scale);
+      ctx.moveTo(actionX - pS * 0.15, sY + pS * 0.25);
+      ctx.lineTo(actionX + pS * 0.95, sY - pS * 0.95);
       ctx.stroke();
       ctx.restore();
 
-      ctx.font = `700 ${10.5 * scale}px -apple-system, BlinkMacSystemFont, sans-serif`;
-      ctx.fillText('Share', actionX, sY + 22 * scale);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `700 ${11 * scale}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('Share', actionX, sY + 26 * scale);
 
       // 4. INSTAGRAM 3-DOTS MORE
-      const dotY = startY + 158 * scale;
+      const dotY = startY + 178 * scale;
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+      ctx.shadowBlur = 6;
       ctx.fillStyle = '#ffffff';
       for (let d = -1; d <= 1; d++) {
         ctx.beginPath();
-        ctx.arc(actionX + d * 6 * scale, dotY, 2 * scale, 0, Math.PI * 2);
+        ctx.arc(actionX, dotY + d * 6.5 * scale, 2.2 * scale, 0, Math.PI * 2);
         ctx.fill();
       }
+      ctx.restore();
 
       // 5. SPINNING VINYL ALBUM DISC
-      const vinylY = height - 44 * scale;
+      const vinylY = height - 48 * scale;
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+      ctx.shadowBlur = 6;
       // Vinyl record body
       ctx.beginPath();
       ctx.arc(actionX, vinylY, 16 * scale, 0, Math.PI * 2);
@@ -991,10 +1013,46 @@ function drawFrameForeground(
       ctx.arc(actionX, vinylY, 5 * scale, 0, Math.PI * 2);
       ctx.fillStyle = '#f43f5e';
       ctx.fill();
+      ctx.restore();
 
       // Bottom User Details
       const userX = 20 * scale;
-      const infoY = height - 88 * scale;
+      const maxCaptionW = width - userX - 80 * scale;
+
+      // Multi-line caption word-wrap to prevent truncation
+      const captionText = settings.reelsCaption || 'Aesthetic vibe check ✨ #fyp #reels';
+      ctx.font = `400 ${12.5 * scale}px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif`;
+
+      const words = captionText.split(' ');
+      const captionLines: string[] = [];
+      let currentLine = '';
+
+      for (let i = 0; i < words.length; i++) {
+        const testLine = currentLine ? `${currentLine} ${words[i]}` : words[i];
+        if (ctx.measureText(testLine).width <= maxCaptionW) {
+          currentLine = testLine;
+        } else {
+          if (captionLines.length === 0) {
+            captionLines.push(currentLine);
+            currentLine = words[i];
+          } else {
+            // Second line overflow: truncate cleanly with "... more"
+            let truncated = currentLine;
+            while (truncated.length > 0 && ctx.measureText(truncated + '... more').width > maxCaptionW) {
+              truncated = truncated.slice(0, -1);
+            }
+            captionLines.push(truncated + '... more');
+            currentLine = '';
+            break;
+          }
+        }
+      }
+      if (currentLine && captionLines.length < 2) {
+        captionLines.push(currentLine);
+      }
+
+      const lineCount = Math.max(1, captionLines.length);
+      const infoY = height - (52 + lineCount * 18 + 24) * scale;
 
       // Profile avatar ring with gradient
       const avatarGrad = ctx.createLinearGradient(userX, infoY - 16 * scale, userX + 32 * scale, infoY + 16 * scale);
@@ -1047,15 +1105,18 @@ function drawFrameForeground(
       ctx.textAlign = 'center';
       ctx.fillText('Follow', followX + 28 * scale, infoY + 4 * scale);
 
-      // Caption
+      // Render Multi-line Wrapped Caption
       ctx.fillStyle = '#ffffff';
       ctx.font = `400 ${12.5 * scale}px -apple-system, BlinkMacSystemFont, sans-serif`;
       ctx.textAlign = 'left';
-      ctx.fillText(settings.reelsCaption || 'Aesthetic vibe check ✨ #fyp #aesthetic', userX, infoY + 30 * scale);
+      captionLines.forEach((line, idx) => {
+        ctx.fillText(line, userX, infoY + (24 + idx * 18) * scale);
+      });
 
       // Audio Banner ticker with musical note
+      const audioY = infoY + (24 + lineCount * 18 + 6) * scale;
       ctx.font = `600 ${11.5 * scale}px -apple-system, BlinkMacSystemFont, sans-serif`;
-      ctx.fillText(`♫ ${settings.reelsAudio || 'Original Sound - Cute Chill Lo-Fi'}`, userX, infoY + 50 * scale);
+      ctx.fillText(`♫ ${settings.reelsAudio || 'Original Sound - Cute Chill Lo-Fi'}`, userX, audioY);
 
       ctx.restore();
       break;
