@@ -10,7 +10,7 @@ import type {
 import { renderCanvas } from '../utils/canvasRenderer';
 import { SAMPLE_IMAGES } from '../utils/sampleImages';
 import type { SampleImage } from '../utils/sampleImages';
-import { Move, ZoomIn, ZoomOut, Maximize2, Trash2, RotateCw, Sparkles, Upload, Camera } from 'lucide-react';
+import { Move, ZoomIn, ZoomOut, Maximize2, Trash2, RotateCw, Sparkles, Upload, Camera, EyeOff, ChevronUp } from 'lucide-react';
 import { sounds } from '../utils/sound';
 
 interface CanvasWorkspaceProps {
@@ -53,6 +53,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [isDraggingPhoto, setIsDraggingPhoto] = useState(false);
   const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDraggingSticker, setIsDraggingSticker] = useState(false);
+  const [isZoomMinimized, setIsZoomMinimized] = useState(false);
 
   // Active pointers tracker for multi-touch (pinch-to-zoom & smooth touch drag)
   const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
@@ -370,82 +371,110 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         </div>
 
         {/* Floating Quick Navigation Toolbars */}
-        <div className="absolute bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 sm:gap-1.5 bg-slate-900/95 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-slate-700/80 shadow-2xl max-w-[96%] overflow-x-auto no-scrollbar z-20">
+        {isZoomMinimized ? (
           <button
-            onClick={() => handleZoom(-0.15)}
-            title="Zoom Out"
-            className="p-1 sm:p-1.5 rounded-full hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
+            onClick={() => {
+              sounds.playPop();
+              setIsZoomMinimized(false);
+            }}
+            title="Tampilkan Kontrol Zoom & Ukuran"
+            className="absolute bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-slate-900/90 hover:bg-slate-800/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-700/80 shadow-2xl text-xs font-semibold text-slate-300 hover:text-white cursor-pointer z-20 transition-all hover:scale-105 active:scale-95"
           >
-            <ZoomOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <ZoomIn className="w-3.5 h-3.5 text-pink-400" />
+            <span>Zoom {Math.round(adjustments.zoom * 100)}%</span>
+            <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
           </button>
+        ) : (
+          <div className="absolute bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 sm:gap-1.5 bg-slate-900/95 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-slate-700/80 shadow-2xl max-w-[96%] overflow-x-auto no-scrollbar z-20 animate-in fade-in zoom-in-95">
+            <button
+              onClick={() => handleZoom(-0.15)}
+              title="Zoom Out"
+              className="p-1 sm:p-1.5 rounded-full hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
+            >
+              <ZoomOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
 
-          <span className="text-[11px] sm:text-xs font-mono font-bold text-slate-300 px-0.5 sm:px-1">
-            {Math.round(adjustments.zoom * 100)}%
-          </span>
+            <span className="text-[11px] sm:text-xs font-mono font-bold text-slate-300 px-0.5 sm:px-1">
+              {Math.round(adjustments.zoom * 100)}%
+            </span>
 
-          <button
-            onClick={() => handleZoom(0.15)}
-            title="Zoom In"
-            className="p-1 sm:p-1.5 rounded-full hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
-          >
-            <ZoomIn className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </button>
+            <button
+              onClick={() => handleZoom(0.15)}
+              title="Zoom In"
+              className="p-1 sm:p-1.5 rounded-full hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
+            >
+              <ZoomIn className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
 
-          <div className="w-[1px] h-3.5 sm:h-4 bg-slate-700 mx-0.5 sm:mx-1" />
+            <div className="w-[1px] h-3.5 sm:h-4 bg-slate-700 mx-0.5 sm:mx-1" />
 
-          <button
-            onClick={handleResetPosition}
-            title="Reset Posisi & Zoom"
-            className="p-1 sm:p-1.5 rounded-full hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
-          >
-            <Maximize2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-          </button>
+            <button
+              onClick={handleResetPosition}
+              title="Reset Posisi & Zoom"
+              className="p-1 sm:p-1.5 rounded-full hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
+            >
+              <Maximize2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            </button>
 
-          {/* Quick iPhone Frame Scale Control directly on canvas */}
-          {frame === 'iphone' && onUpdateFrameSettings && (
-            <>
-              <div className="w-[1px] h-3.5 sm:h-4 bg-slate-700 mx-0.5 sm:mx-1" />
-              <div className="flex items-center gap-0.5 sm:gap-1">
-                <span className="text-[10px] sm:text-[11px] text-amber-400 font-bold hidden sm:inline">📱 Frame:</span>
-                <button
-                  onClick={() => {
-                    sounds.playPop();
-                    onUpdateFrameSettings((prev) => ({
-                      ...prev,
-                      iphoneFrameScale: Math.max(0.5, Math.round(((prev.iphoneFrameScale ?? 1.0) - 0.1) * 10) / 10),
-                    }));
-                  }}
-                  title="Perkecil Skala Frame iPhone"
-                  className="w-5 h-5 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white flex items-center justify-center cursor-pointer"
-                >
-                  -
-                </button>
-                <span className="text-[11px] sm:text-xs font-mono font-bold text-amber-300 min-w-[28px] sm:min-w-[34px] text-center">
-                  {Math.round((frameSettings.iphoneFrameScale ?? 1.0) * 100)}%
-                </span>
-                <button
-                  onClick={() => {
-                    sounds.playPop();
-                    onUpdateFrameSettings((prev) => ({
-                      ...prev,
-                      iphoneFrameScale: Math.min(1.5, Math.round(((prev.iphoneFrameScale ?? 1.0) + 0.1) * 10) / 10),
-                    }));
-                  }}
-                  title="Perbesar Skala Frame iPhone"
-                  className="w-5 h-5 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white flex items-center justify-center cursor-pointer"
-                >
-                  +
-                </button>
-              </div>
-            </>
-          )}
+            {/* Quick iPhone Frame Scale Control directly on canvas */}
+            {frame === 'iphone' && onUpdateFrameSettings && (
+              <>
+                <div className="w-[1px] h-3.5 sm:h-4 bg-slate-700 mx-0.5 sm:mx-1" />
+                <div className="flex items-center gap-0.5 sm:gap-1">
+                  <span className="text-[10px] sm:text-[11px] text-amber-400 font-bold hidden sm:inline">📱 Frame:</span>
+                  <button
+                    onClick={() => {
+                      sounds.playPop();
+                      onUpdateFrameSettings((prev) => ({
+                        ...prev,
+                        iphoneFrameScale: Math.max(0.5, Math.round(((prev.iphoneFrameScale ?? 1.0) - 0.1) * 10) / 10),
+                      }));
+                    }}
+                    title="Perkecil Skala Frame iPhone"
+                    className="w-5 h-5 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white flex items-center justify-center cursor-pointer"
+                  >
+                    -
+                  </button>
+                  <span className="text-[11px] sm:text-xs font-mono font-bold text-amber-300 min-w-[28px] sm:min-w-[34px] text-center">
+                    {Math.round((frameSettings.iphoneFrameScale ?? 1.0) * 100)}%
+                  </span>
+                  <button
+                    onClick={() => {
+                      sounds.playPop();
+                      onUpdateFrameSettings((prev) => ({
+                        ...prev,
+                        iphoneFrameScale: Math.min(1.5, Math.round(((prev.iphoneFrameScale ?? 1.0) + 0.1) * 10) / 10),
+                      }));
+                    }}
+                    title="Perbesar Skala Frame iPhone"
+                    className="w-5 h-5 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white flex items-center justify-center cursor-pointer"
+                  >
+                    +
+                  </button>
+                </div>
+              </>
+            )}
 
-          <div className="flex items-center gap-1 text-[10px] sm:text-[11px] text-slate-400 pl-1 whitespace-nowrap">
-            <Move className="w-3 h-3 text-pink-400" />
-            <span className="hidden sm:inline">Tahan & Geser Foto</span>
-            <span className="sm:hidden">Geser • Cubit Zoom</span>
+            <div className="flex items-center gap-1 text-[10px] sm:text-[11px] text-slate-400 pl-1 whitespace-nowrap">
+              <Move className="w-3 h-3 text-pink-400" />
+              <span className="hidden sm:inline">Tahan & Geser Foto</span>
+              <span className="sm:hidden">Geser • Cubit Zoom</span>
+            </div>
+
+            {/* Minimize / Hide Button */}
+            <div className="w-[1px] h-3.5 sm:h-4 bg-slate-700 mx-0.5 sm:mx-1" />
+            <button
+              onClick={() => {
+                sounds.playPop();
+                setIsZoomMinimized(true);
+              }}
+              title="Sembunyikan / Minimize Kontrol"
+              className="p-1 sm:p-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-pink-400 transition cursor-pointer flex items-center justify-center"
+            >
+              <EyeOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

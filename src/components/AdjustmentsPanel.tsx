@@ -1,5 +1,5 @@
 import React from 'react';
-import type { PhotoAdjustments, AspectRatio } from '../types';
+import type { PhotoAdjustments, AspectRatio, FrameType } from '../types';
 import { RotateCw, FlipHorizontal, FlipVertical, ZoomIn, Sun, Contrast, Eye, Sparkles } from 'lucide-react';
 import { sounds } from '../utils/sound';
 
@@ -8,6 +8,7 @@ interface AdjustmentsPanelProps {
   onChange: (updater: (prev: PhotoAdjustments) => PhotoAdjustments) => void;
   aspectRatio: AspectRatio;
   onAspectRatioChange: (ar: AspectRatio) => void;
+  frame?: FrameType;
 }
 
 export const AdjustmentsPanel: React.FC<AdjustmentsPanelProps> = ({
@@ -15,6 +16,7 @@ export const AdjustmentsPanel: React.FC<AdjustmentsPanelProps> = ({
   onChange,
   aspectRatio,
   onAspectRatioChange,
+  frame,
 }) => {
   const handleResetAdjustments = () => {
     sounds.playPop();
@@ -51,7 +53,14 @@ export const AdjustmentsPanel: React.FC<AdjustmentsPanelProps> = ({
 
       {/* Aspect Ratio Selector */}
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-slate-400 block">Rasio Kanvas</label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-semibold text-slate-400 block">Rasio Kanvas</label>
+          {frame && frame !== 'none' && (
+            <span className="text-[10px] text-pink-300 font-semibold bg-pink-500/15 px-2 py-0.5 rounded-full border border-pink-500/30">
+              Standar Bingkai Aktif
+            </span>
+          )}
+        </div>
         <div className="grid grid-cols-5 gap-1.5 text-xs">
           {(['1:1', '4:5', '9:16', '4:3', 'original'] as AspectRatio[]).map((ar) => (
             <button

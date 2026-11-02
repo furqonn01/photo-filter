@@ -26,29 +26,57 @@ export function getCanvasDimensions(
   frame: FrameType,
   highRes = false
 ): { width: number; height: number } {
-  // If Reels frame is selected, default to 9:16 vertical format
+  // 1. iPhone Camera Viewfinder: Standard 9:16 portrait format (540x960 preview / 1080x1920 highRes)
+  if (frame === 'iphone') {
+    const baseW = highRes ? 1080 : 540;
+    return { width: baseW, height: Math.round((baseW * 16) / 9) };
+  }
+
+  // 2. Reels / TikTok: Standard 9:16 vertical format (540x960 preview / 1080x1920 highRes)
   if (frame === 'reels') {
     const baseW = highRes ? 1080 : 540;
     return { width: baseW, height: Math.round((baseW * 16) / 9) };
   }
 
-  // If MacBook frame, 16:10 or 4:3 format is classic
+  // 3. MacBook Photo Booth: Standard 4:3 inner view + title & bottom bars (640x556 preview / 1280x1112 highRes)
   if (frame === 'macbook') {
     const baseW = highRes ? 1280 : 640;
-    return { width: baseW, height: Math.round((baseW * 3) / 4) + (highRes ? 140 : 70) };
+    const topBarHeight = highRes ? 60 : 30;
+    const bottomBarHeight = highRes ? 92 : 46;
+    return { width: baseW, height: Math.round((baseW * 3) / 4) + topBarHeight + bottomBarHeight };
   }
 
-  // Photobooth 4-cut vertical strip or Polaroid
+  // 4. Digicam 2000s: Standard 4:3 vintage CCD screen format (600x450 preview / 1200x900 highRes)
+  if (frame === 'digicam') {
+    const baseW = highRes ? 1200 : 600;
+    return { width: baseW, height: Math.round((baseW * 3) / 4) };
+  }
+
+  // 5. Photobooth 4-cut vertical strip (인생네컷): Standard 2:3 ratio (450x675 preview / 900x1350 highRes)
   if (frame === 'photobooth_4cut') {
     const baseW = highRes ? 900 : 450;
     return { width: baseW, height: Math.round(baseW * 1.5) };
   }
 
+  // 6. Polaroid: Standard 4:5 classic format (500x625 preview / 1000x1250 highRes)
   if (frame === 'polaroid') {
     const baseW = highRes ? 1000 : 500;
     return { width: baseW, height: Math.round(baseW * 1.25) };
   }
 
+  // 7. Retro Music Player (iPod): Standard 3:4 format (540x720 preview / 1080x1440 highRes)
+  if (frame === 'music_player') {
+    const baseW = highRes ? 1080 : 540;
+    return { width: baseW, height: Math.round((baseW * 4) / 3) };
+  }
+
+  // 8. Game Boy Camera: Standard 10:9 retro handheld ratio (480x533 preview / 960x1067 highRes)
+  if (frame === 'gameboy') {
+    const baseW = highRes ? 960 : 480;
+    return { width: baseW, height: Math.round((baseW * 10) / 9) };
+  }
+
+  // 9. Frame 'none' (or free canvas): Custom user aspect ratio
   const base = highRes ? 1200 : 600;
 
   switch (aspectRatio) {
@@ -96,8 +124,8 @@ export function renderCanvas({
   let photoBounds = { x: 0, y: 0, w: width, h: height, radius: 0 };
 
   if (frame === 'macbook') {
-    const topBarHeight = highRes ? 56 : 28;
-    const bottomBarHeight = highRes ? 84 : 42;
+    const topBarHeight = highRes ? 60 : 30;
+    const bottomBarHeight = highRes ? 92 : 46;
     photoBounds = {
       x: 0,
       y: topBarHeight,
@@ -124,6 +152,15 @@ export function renderCanvas({
       w: width - pad * 2,
       h: height - pad - bottomPad,
       radius: 12,
+    };
+  } else if (frame === 'gameboy') {
+    const pad = 24 * (highRes ? 2 : 1);
+    photoBounds = {
+      x: pad,
+      y: pad,
+      w: width - pad * 2,
+      h: height - pad * 2,
+      radius: 8,
     };
   }
 

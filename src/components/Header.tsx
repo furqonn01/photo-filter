@@ -34,20 +34,20 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-40 bg-[#0f1422]/95 backdrop-blur-md border-b border-slate-800/80 px-2.5 py-2.5 sm:px-6 sm:py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
         {/* Logo and Brand */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-pink-500/20 text-white">
-            <Camera className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
+        <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
+          <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-pink-500/20 text-white flex-shrink-0">
+            <Camera className="w-3.5 h-3.5 sm:w-5 sm:h-5 animate-pulse" />
           </div>
           <div>
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <h1 className="font-extrabold text-base sm:text-xl tracking-tight bg-gradient-to-r from-pink-400 via-purple-300 to-indigo-300 bg-clip-text text-transparent">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <h1 className="font-extrabold text-sm sm:text-xl tracking-tight bg-gradient-to-r from-pink-400 via-purple-300 to-indigo-300 bg-clip-text text-transparent">
                 RetroSnap
               </h1>
-              <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">
+              <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">
                 <Sparkles className="w-3 h-3" /> Cute & Retro
               </span>
             </div>
-            <p className="text-xs text-slate-400 hidden sm:block">
+            <p className="text-xs text-slate-400 hidden lg:block">
               MacBook Photo Booth, iPhone Viewfinder & Reels Filter
             </p>
           </div>
@@ -77,18 +77,18 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Right Action Buttons */}
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 flex-nowrap flex-shrink-0">
           {/* Sound Toggle */}
           <button
             onClick={toggleSound}
             title={soundEnabled ? 'Matikan Suara' : 'Nyalakan Suara'}
-            className={`p-1.5 sm:p-2 rounded-xl border transition-all cursor-pointer ${
+            className={`w-7 h-7 sm:w-auto sm:h-auto p-1.5 sm:p-2 rounded-xl border flex items-center justify-center transition-all cursor-pointer flex-shrink-0 ${
               soundEnabled
                 ? 'bg-slate-800 text-pink-400 border-pink-500/30 shadow-sm shadow-pink-500/10'
                 : 'bg-slate-800/60 text-slate-400 border-slate-700/60 hover:text-slate-200'
             }`}
           >
-            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            {soundEnabled ? <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
           </button>
 
           {/* Reset button */}
@@ -98,9 +98,9 @@ export const Header: React.FC<HeaderProps> = ({
               onReset();
             }}
             title="Reset Pengaturan"
-            className="p-1.5 sm:p-2 rounded-xl bg-slate-800/80 text-slate-300 border border-slate-700 hover:bg-slate-700 transition cursor-pointer"
+            className="w-7 h-7 sm:w-auto sm:h-auto p-1.5 sm:p-2 rounded-xl bg-slate-800/80 text-slate-300 border border-slate-700 hover:bg-slate-700 transition cursor-pointer flex items-center justify-center flex-shrink-0"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
 
           {/* Ambil Foto Webcam / Kamera HP */}
@@ -109,11 +109,11 @@ export const Header: React.FC<HeaderProps> = ({
               if (soundEnabled) sounds.playPop();
               onOpenCamera();
             }}
-            className="flex items-center gap-1 px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition cursor-pointer"
+            title="Ambil Foto dari Kamera"
+            className="w-7 h-7 sm:w-auto sm:h-auto p-1.5 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition cursor-pointer flex items-center justify-center gap-1.5 flex-shrink-0"
           >
             <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400" />
-            <span className="hidden md:inline">Ambil Foto</span>
-            <span className="md:hidden">Kamera</span>
+            <span className="hidden sm:inline">Kamera</span>
           </button>
 
           {/* Upload Button */}
@@ -122,11 +122,11 @@ export const Header: React.FC<HeaderProps> = ({
               if (soundEnabled) sounds.playPop();
               onUploadClick();
             }}
-            className="flex items-center gap-1 px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 text-purple-200 text-xs font-semibold border border-purple-500/30 transition cursor-pointer"
+            title="Pilih Foto dari Galeri"
+            className="w-7 h-7 sm:w-auto sm:h-auto p-1.5 sm:px-3 sm:py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 text-purple-200 text-xs font-semibold border border-purple-500/30 transition cursor-pointer flex items-center justify-center gap-1.5 flex-shrink-0"
           >
-            <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span className="hidden md:inline">Pilih Foto</span>
-            <span className="md:hidden">Galeri</span>
+            <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-300" />
+            <span className="hidden sm:inline">Galeri</span>
           </button>
 
           {/* Export / Save Button */}
@@ -135,7 +135,8 @@ export const Header: React.FC<HeaderProps> = ({
               if (soundEnabled) sounds.playPop();
               onExportClick();
             }}
-            className="flex items-center gap-1 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white text-xs font-bold shadow-md shadow-pink-500/25 transition-all cursor-pointer transform hover:scale-[1.02] active:scale-[0.98]"
+            title="Simpan & Download Foto"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white text-xs font-bold shadow-md shadow-pink-500/25 transition-all cursor-pointer transform hover:scale-[1.02] active:scale-[0.98] flex-shrink-0"
           >
             <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>Simpan</span>

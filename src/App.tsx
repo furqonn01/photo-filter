@@ -134,12 +134,14 @@ export function App() {
   // Switch Frame with smart Aspect Ratio adjustments
   const handleSelectFrame = (newFrame: FrameType) => {
     setFrame(newFrame);
-    if (newFrame === 'reels') {
+    if (newFrame === 'iphone' || newFrame === 'reels') {
       setAspectRatio('9:16');
-    } else if (newFrame === 'macbook') {
+    } else if (newFrame === 'macbook' || newFrame === 'digicam') {
       setAspectRatio('4:3');
-    } else if (newFrame === 'polaroid' || newFrame === 'photobooth_4cut') {
+    } else if (newFrame === 'polaroid' || newFrame === 'photobooth_4cut' || newFrame === 'music_player') {
       setAspectRatio('4:5');
+    } else if (newFrame === 'gameboy') {
+      setAspectRatio('1:1');
     }
   };
 
@@ -314,6 +316,7 @@ export function App() {
                 onChange={setAdjustments}
                 aspectRatio={aspectRatio}
                 onAspectRatioChange={setAspectRatio}
+                frame={frame}
               />
             )}
 
