@@ -358,8 +358,10 @@ function drawFrameBackground(
     ctx.fillStyle = settings.macbookDark ? '#1e1e1e' : '#e2e8f0';
     ctx.fillRect(0, 0, width, height);
   } else if (frame === 'iphone') {
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, width, height);
+    if (settings.iphoneBarStyle !== 'translucent') {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, width, height);
+    }
   }
 }
 
@@ -598,7 +600,7 @@ function drawFrameForeground(
       const bottomBarH = 184 * baseScale;
       const barStyle = settings.iphoneBarStyle || 'solid';
 
-      // 1. TOP & BOTTOM CAMERA BARS (Solid Jet Black #000000 vs Translucent Full Screen)
+      // 1. TOP & BOTTOM CAMERA BARS (Solid Jet Black #000000 vs Pure Translucent without color gradient)
       if (barStyle === 'solid') {
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, width, topBarH);
@@ -617,20 +619,10 @@ function drawFrameForeground(
         );
         ctx.stroke();
       } else {
-        // Translucent gradient scrims for full preview
-        const topGrad = ctx.createLinearGradient(0, 0, 0, topBarH);
-        topGrad.addColorStop(0, 'rgba(0, 0, 0, 0.88)');
-        topGrad.addColorStop(0.7, 'rgba(0, 0, 0, 0.55)');
-        topGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        ctx.fillStyle = topGrad;
-        ctx.fillRect(0, 0, width, topBarH);
-
-        const botGrad = ctx.createLinearGradient(0, height - bottomBarH, 0, height);
-        botGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-        botGrad.addColorStop(0.3, 'rgba(0, 0, 0, 0.65)');
-        botGrad.addColorStop(1, 'rgba(0, 0, 0, 0.96)');
-        ctx.fillStyle = botGrad;
-        ctx.fillRect(0, height - bottomBarH, width, bottomBarH);
+        // Pure transparent mode: Zero color gradient or background tint on the photo!
+        // Subtle drop shadow ensures icons & text remain crisp over bright photos
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
+        ctx.shadowBlur = 3 * baseScale;
       }
 
       // 2. AUTHENTIC iOS STATUS BAR & DYNAMIC ISLAND
@@ -1048,24 +1040,26 @@ function drawFrameForeground(
         ctx.fillText(m, mX, modeY);
       });
 
-      // Smooth Edge Fade Scrims (Left & Right)
-      const fadeW = width * 0.26;
-      const fadeH = 28 * baseScale;
-      const fadeY = modeY - fadeH / 2;
+      // Smooth Edge Fade Scrims (Left & Right) - only in solid black bar mode
+      if (barStyle === 'solid') {
+        const fadeW = width * 0.26;
+        const fadeH = 28 * baseScale;
+        const fadeY = modeY - fadeH / 2;
 
-      // Left edge fade out
-      const leftFade = ctx.createLinearGradient(0, 0, fadeW, 0);
-      leftFade.addColorStop(0, '#000000');
-      leftFade.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = leftFade;
-      ctx.fillRect(0, fadeY, fadeW, fadeH);
+        // Left edge fade out
+        const leftFade = ctx.createLinearGradient(0, 0, fadeW, 0);
+        leftFade.addColorStop(0, '#000000');
+        leftFade.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = leftFade;
+        ctx.fillRect(0, fadeY, fadeW, fadeH);
 
-      // Right edge fade out
-      const rightFade = ctx.createLinearGradient(width - fadeW, 0, width, 0);
-      rightFade.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      rightFade.addColorStop(1, '#000000');
-      ctx.fillStyle = rightFade;
-      ctx.fillRect(width - fadeW, fadeY, fadeW, fadeH);
+        // Right edge fade out
+        const rightFade = ctx.createLinearGradient(width - fadeW, 0, width, 0);
+        rightFade.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        rightFade.addColorStop(1, '#000000');
+        ctx.fillStyle = rightFade;
+        ctx.fillRect(width - fadeW, fadeY, fadeW, fadeH);
+      }
 
       // 7. BOTTOM ACTION BAR (Shutter Button, Gallery Preview, Flip Camera)
       const shutterY = height - 76 * baseScale;
